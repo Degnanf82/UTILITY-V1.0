@@ -6,12 +6,18 @@ MODE con:cols=85 lines=35
 chcp 65001
 color 02
 set current_dir=%cd%
+call :loadconfig
 
 
 :inicio
 cls
 call :c 05 "                                   BIENVENID@: %USERNAME%  "
 echo.
+call :estado
+call :c 0E "                    DISPOSITIVO CONECTADO: "
+if /I "%DEVSTATE%"=="ADB" call :c 0A "ADB"
+if /I "%DEVSTATE%"=="FASTBOOT" call :c 0B "FASTBOOT"
+if /I "%DEVSTATE%"=="NINGUNO" call :c 0C "NINGUNO"
 echo.
 echo  █████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗
 echo  ╚════╝╚════╝╚════╝╚════╝╚═══
@@ -28,7 +34,7 @@ echo  ██║░░░░░[5: WINDOWS DEFENDER REMOVE]░░░░░░░�
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░[6: DRIVERS FOR ANDROID (ALL)]░░░░░░[13: ACTIVAR PUERTO DIAG (MI)(ROOT)]░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
-echo  ██║░░░░░[7: SCREEN MIRROR ANDROID(ADB)]░░░░░[14: ]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
+echo  ██║░░░░░[7: SCREEN MIRROR ANDROID(ADB)]░░░░░[14: HERRAMIENTAS ADB/FASTBOOT]░░░░░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
@@ -63,7 +69,7 @@ goto:inicio
 echo.
 echo.
 call :c 0E " ══════════► DIRIGIENDO A LA DESCARGA:     "
-start https://www.mediafire.com/file/nwy3evzmbaavbz4/Visual-C-Runtimes-All-in-One-May-2023.rar/file
+start "" "%CFG_VISUALC%"
 call :c D2 "LISTO"
 echo.
 echo.
@@ -170,61 +176,61 @@ echo.
 
 :QCM
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVER.QUALCOMM.rar
+    start "" "%CFG_DRV_QCM%"
     echo.
 goto:op6
 
 :MTK
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/MTK.DRIVER.rar
+    start "" "%CFG_DRV_MTK%"
     echo.
 goto:op6
 
 :SPD
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVER.SPRD.rar
+    start "" "%CFG_DRV_SPD%"
     echo.
 goto:op6
 
 :SAMS
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/SAMSUNG.DRIVER.rar
+    start "" "%CFG_DRV_SAMS%"
     echo.
 goto:op6
 
 :MOTO
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/MOTOROLA.DRIVER.rar
+    start "" "%CFG_DRV_MOTO%"
     echo.
 goto:op6
 
 :OPPO
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/OPPO.DRIVER.rar
+    start "" "%CFG_DRV_OPPO%"
     echo.
 goto:op6
 
 :HUA
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVER.HUAWEI.HONOR.rar
+    start "" "%CFG_DRV_HUA%"
     echo.
 goto:op6
 
 :XIA
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/XIAOMI.DRIVER.rar
+    start "" "%CFG_DRV_XIA%"
     echo.
 goto:op6
 
 :LIB
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/libusb-win32-devel-filter-1.2.6.0.rar
+    start "" "%CFG_DRV_LIB%"
     echo.
 goto:op6
 
 :ALL
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVERS_ANDROID.rar
+    start "" "%CFG_DRV_ALL%"
     echo.
 goto:op6
 
@@ -246,7 +252,7 @@ goto:inicio
 :op9
 echo.
 	SET /p modelo= ^> ══════════► ESCRIBA EL MODELO (EJ: A325M): 
-	start "" https://samfw.com/firmware/SM-%modelo%
+	start "" "%CFG_URL_SAMFW%%modelo%"
   echo.
 goto:inicio
 
@@ -424,7 +430,144 @@ goto:inicio
 goto:inicio
 
 :op14
-goto:soon
+:toolsadb
+cls
+echo.
+call :c 05 "        HERRAMIENTAS ADB / FASTBOOT  "
+echo.
+call :estado
+call :c 0E "        DISPOSITIVO CONECTADO: "
+if /I "%DEVSTATE%"=="ADB" call :c 0A "ADB"
+if /I "%DEVSTATE%"=="FASTBOOT" call :c 0B "FASTBOOT"
+if /I "%DEVSTATE%"=="NINGUNO" call :c 0C "NINGUNO"
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "INSTALAR APK (arrastra el archivo)"
+echo.
+call :c 0E "   [2] "&call :c 06 "REINICIAR A MODO (recovery/bootloader/edl...)"
+echo.
+call :c 0E "   [3] "&call :c 06 "REPORTE DEL DISPOSITIVO A .TXT"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
+echo.
+echo.
+set "t="
+set /p "t=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%t%"=="1" goto apkinstall
+if "%t%"=="2" goto rebootmenu
+if "%t%"=="3" goto reportinfo
+if "%t%"=="0" goto inicio
+goto toolsadb
+
+:apkinstall
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+call :c 0E "  Arrastra el archivo .APK a esta ventana y presiona ENTER:"
+echo.
+set "APKFILE="
+set /p "APKFILE=  APK: "
+set "APKFILE=%APKFILE:"=%"
+if not exist "%APKFILE%" (
+	echo.
+	call :c 0C "  Archivo no encontrado."
+	echo.
+	pause
+	goto toolsadb
+)
+echo.
+call :c 0E "  INSTALANDO... "
+echo.
+adb %ADBSEL% install -r "%APKFILE%"
+echo.
+call :c 0A "  PROCESO FINALIZADO"
+echo.
+pause
+goto toolsadb
+
+:rebootmenu
+cls
+echo.
+call :c 05 "        REINICIAR DISPOSITIVO A:  "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "RECOVERY"
+echo.
+call :c 0E "   [2] "&call :c 06 "BOOTLOADER (FASTBOOT)"
+echo.
+call :c 0E "   [3] "&call :c 06 "FASTBOOTD (userspace)"
+echo.
+call :c 0E "   [4] "&call :c 06 "DOWNLOAD / ODIN (Samsung)"
+echo.
+call :c 0E "   [5] "&call :c 06 "EDL 9008 (Qualcomm)"
+echo.
+call :c 0E "   [6] "&call :c 06 "SISTEMA (reinicio normal)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+set "r="
+set /p "r=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%r%"=="0" goto toolsadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+if "%r%"=="1" adb %ADBSEL% reboot recovery
+if "%r%"=="2" adb %ADBSEL% reboot bootloader
+if "%r%"=="3" adb %ADBSEL% reboot fastboot
+if "%r%"=="4" adb %ADBSEL% reboot download
+if "%r%"=="5" adb %ADBSEL% reboot edl
+if "%r%"=="6" adb %ADBSEL% reboot
+echo.
+call :c 0A "  COMANDO ENVIADO"
+echo.
+pause
+goto toolsadb
+
+:reportinfo
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "RPT=%~dp0REPORTE_%SERIAL%.txt"
+echo.
+call :c 0E "  GENERANDO REPORTE... "
+echo.
+(
+echo ================= REPORTE DISPOSITIVO =================
+echo Fecha        : %date% %time%
+echo Serial       : %SERIAL%
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.manufacturer') do echo Marca        : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.model') do echo Modelo       : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.name') do echo Nombre       : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.build.version.release') do echo Android      : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.build.version.security_patch') do echo Parche Seg.  : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.build.version.incremental') do echo Compilacion  : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.hardware.chipname') do echo Chipset      : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.version.baseband') do echo Modem        : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.state') do echo Estado SIM   : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.csc.omcnw_code') do echo CSC          : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell "service call iphonesubinfo 1 ^| cut -c 52-66 ^| tr -d '.[:space:]'"') do echo IMEI         : %%a
+echo ======================================================
+) > "%RPT%"
+type "%RPT%"
+echo.
+call :c 0A "  GUARDADO EN: "
+echo  %RPT%
+echo.
+pause
+goto toolsadb
+
+:nodevadb
+echo.
+call :c 0C "  CONECTA EL DISPOSITIVO EN MODO ADB (Depuracion USB activada)"
+echo.
+echo.
+pause
+goto toolsadb
 
 
 ::::::::::::::DEFENDER REMOVE
@@ -1059,6 +1202,41 @@ echo.
 pause
 goto:inicio
 
+:loadconfig
+if not exist "%~dp0config.ini" exit /b
+for /f "usebackq eol=# tokens=1,* delims==" %%a in ("%~dp0config.ini") do set "%%a=%%b"
+exit /b
+
+:estado
+set "DEVSTATE="
+for /f "tokens=1" %%d in ('adb devices 2^>nul ^| findstr /r "device$"') do set "DEVSTATE=ADB"
+if not defined DEVSTATE (
+	for /f "tokens=2" %%d in ('fastboot devices 2^>nul ^| find /i "fastboot"') do set "DEVSTATE=FASTBOOT"
+)
+if not defined DEVSTATE set "DEVSTATE=NINGUNO"
+exit /b
+
+:pickdevice
+set "SERIAL="
+set "ADBSEL="
+set "_n=0"
+for /f "tokens=1" %%d in ('adb devices 2^>nul ^| findstr /r "device$"') do (set "SERIAL=%%d" & set /a _n+=1)
+if "%_n%"=="0" exit /b 1
+if %_n% GTR 1 goto pickmany
+set "ADBSEL=-s %SERIAL%"
+exit /b 0
+:pickmany
+echo.
+call :c 0E "  Hay varios dispositivos conectados:"
+echo.
+adb devices
+echo.
+set "SERIAL="
+set /p "SERIAL=  Escribe el SERIAL a usar: "
+if not defined SERIAL exit /b 1
+set "ADBSEL=-s %SERIAL%"
+exit /b 0
+
 :c
 setlocal enableDelayedExpansion
 
@@ -1116,4 +1294,4 @@ exit /b
 exit /b
 
 :salir
-    @cls&exit
+    @cls&exit
