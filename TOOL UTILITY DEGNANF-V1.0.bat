@@ -454,6 +454,8 @@ call :c 0E "   [5] "&call :c 06 "BACKUP ANTI-BRICK (EFS / PERSIST / APPS)"
 echo.
 call :c 0E "   [6] "&call :c 06 "DEBLOAT SEGURO (paquetes recomendados)"
 echo.
+call :c 0E "   [7] "&call :c 06 "RECUPERACION DE EQUIPO (fastboot, firmware oficial)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -465,6 +467,7 @@ if "%t%"=="3" goto reportinfo
 if "%t%"=="4" goto netunlock
 if "%t%"=="5" goto backupmenu
 if "%t%"=="6" goto debloatmenu
+if "%t%"=="7" goto brickmenu
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -848,6 +851,112 @@ call :c 0A "  Hecho."
 echo.
 pause
 goto debloatmenu
+
+:brickmenu
+cls
+echo.
+call :c 05 "     RECUPERACION DE EQUIPO  (solo firmware OFICIAL)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "DIAGNOSTICO FASTBOOT (marca, bootloader, slot)"
+echo.
+call :c 0E "   [2] "&call :c 06 "EJECUTAR SCRIPT OFICIAL DE FLASHEO (carpeta descargada)"
+echo.
+call :c 0E "   [3] "&call :c 06 "GUIA: EDL / BROM / DOWNLOAD (servicio oficial)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+set "bk="
+set /p "bk=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%bk%"=="1" goto brickdiag
+if "%bk%"=="2" goto brickscript
+if "%bk%"=="3" goto brickguide
+if "%bk%"=="0" goto toolsadb
+goto brickmenu
+
+:brickdiag
+cls
+fastboot devices 2>nul | find /i "fastboot" >nul
+if errorlevel 1 goto brick_nofb
+echo.
+for %%v in (product unlocked current-slot slot-count) do (
+	for /f "tokens=1,* delims=:" %%a in ('fastboot getvar %%v 2^>^&1 ^| findstr /i /b "%%v"') do call :c 0E "  %%v : " & call :c 06 "%%b"
+	echo.
+)
+echo.
+call :c 0E "  Si 'unlocked' es 'no', el equipo NO aceptara imagenes sin firmar (Pixel, Xiaomi, Motorola, etc.)."
+echo.
+pause
+goto brickmenu
+
+:brickscript
+cls
+fastboot devices 2>nul | find /i "fastboot" >nul
+if errorlevel 1 goto brick_nofb
+echo.
+call :c 0E "  Arrastra aqui la CARPETA del firmware OFICIAL descargado (la que trae flash-all.bat, flash_all.bat o flashfile):"
+echo.
+set "FWDIR="
+set /p "FWDIR=  CARPETA: "
+set "FWDIR=%FWDIR:"=%"
+if not exist "%FWDIR%\" (
+	call :c 0C "  Carpeta no encontrada."
+	echo.
+	pause
+	goto brickmenu
+)
+set "FWSCRIPT="
+for %%s in (flash-all.bat flash_all.bat flashall.bat flash_all_except_storage.bat flash_all_except_data_storage.bat) do if exist "%FWDIR%\%%s" if not defined FWSCRIPT set "FWSCRIPT=%%s"
+if not defined FWSCRIPT (
+	call :c 0C "  No encontre un script de flasheo oficial en esa carpeta. Se cancela."
+	echo.
+	pause
+	goto brickmenu
+)
+echo.
+call :c 0E "  Script encontrado: "&call :c 06 "%FWSCRIPT%"
+echo.
+call :c 0C "  ADVERTENCIA: flash-all borra los datos del telefono (salvo flash_all_except_storage)."
+echo.
+call :c 0C "  Haz primero el respaldo de Fase 2 (opcion 5) si necesitas efs/persist. No sirve con el bootloader bloqueado."
+echo.
+set "OK="
+set /p "OK=  Escribe SI en mayusculas para continuar: "
+if not "%OK%"=="SI" goto brickmenu
+pushd "%FWDIR%"
+call "%FWSCRIPT%"
+popd
+echo.
+call :c 0A "  Script terminado. Revisa la salida: si dice FAILED, no reinicies; consulta al servicio oficial."
+echo.
+pause
+goto brickmenu
+
+:brickguide
+cls
+echo.
+call :c 05 "   GUIA DE RECUPERACION QUE NO AUTOMATIZO"
+echo.
+echo.
+call :c 06 "  EDL (Qualcomm 9008) y BROM (MediaTek): requieren autorizacion del fabricante"
+echo.
+call :c 06 "  o un programador firmado. Lleva el equipo a servicio oficial o centro autorizado."
+echo.
+call :c 06 "  Samsung: si entra en Download, usa su firmware oficial (la opcion se agrega con Heimdall)."
+echo.
+call :c 06 "  Huawei/Honor: eRecovery o HiSuite oficial. Nokia/HMD: Nokia Software Updater."
+echo.
+echo.
+pause
+goto brickmenu
+
+:brick_nofb
+echo.
+call :c 0C "  No hay equipo en modo FASTBOOT. Apagalo y entra con Vol- + USB (o el comando de tu marca)."
+echo.
+pause
+goto brickmenu
 
 :nodevadb
 echo.

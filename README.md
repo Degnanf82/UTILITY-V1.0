@@ -9,6 +9,15 @@ drivers, firmware y utilidades varias.
    para las opciones que lo requieran).
 2. Elige una opción del menú escribiendo su número.
 
+## Novedades (Fase 4: recuperación de equipo)
+
+### Opción 14 → 7 — RECUPERACION DE EQUIPO (solo firmware oficial)
+- **[1] Diagnóstico fastboot:** muestra producto, estado `unlocked` del bootloader y slot activo.
+- **[2] Ejecutar script oficial de flasheo:** arrastras la carpeta del firmware **oficial** (la que trae `flash-all.bat`, `flash_all.bat` o `flashfile`). El menú lo busca, pide confirmar con `SI` y lo ejecuta. No escribo comandos de flasheo por modelo.
+- **[3] Guía:** EDL (9008), BROM y modo Download sin acceso van al servicio oficial.
+
+**Fuera de alcance por ahora:** Samsung (depende de Heimdall y de los flags de samloader-rs, pendientes de verificar), EDL/BROM sin autorización y cualquier bypass de autenticación.
+
 ## Novedades (Fase 3: debloat)
 
 ### Opción 14 → 6 — DEBLOAT SEGURO
