@@ -452,6 +452,8 @@ call :c 0E "   [4] "&call :c 06 "ESTADO DE RED Y DESBLOQUEO OFICIAL"
 echo.
 call :c 0E "   [5] "&call :c 06 "BACKUP ANTI-BRICK (EFS / PERSIST / APPS)"
 echo.
+call :c 0E "   [6] "&call :c 06 "DEBLOAT SEGURO (paquetes recomendados)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -462,6 +464,7 @@ if "%t%"=="2" goto rebootmenu
 if "%t%"=="3" goto reportinfo
 if "%t%"=="4" goto netunlock
 if "%t%"=="5" goto backupmenu
+if "%t%"=="6" goto debloatmenu
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -765,6 +768,86 @@ echo.
 echo.
 pause
 goto toolsadb
+
+:debloatmenu
+cls
+echo.
+call :c 05 "     DEBLOAT SEGURO  (paquetes 'Recommended' de UAD-ng)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "QUITAR PAQUETES SEGUROS (reversible, sin root)"
+echo.
+call :c 0E "   [2] "&call :c 06 "RESTAURAR UN PAQUETE QUITADO"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+call :c 0E "   Fuente: debloat\uad_recommended.txt (GPL-3.0, ver debloat\NOTICE.txt)"
+echo.
+echo.
+set "d="
+set /p "d=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%d%"=="1" goto debloatrun
+if "%d%"=="2" goto debloatrestore
+if "%d%"=="0" goto toolsadb
+goto debloatmenu
+
+:debloatrun
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+call :c 0C "  Se quitaran los paquetes marcados como SEGUROS para el usuario 0."
+echo.
+call :c 0E "  Es reversible con la opcion [2]. Se guarda un registro en debloat\log_<serial>.txt"
+echo.
+set "OK="
+set /p "OK=  Escribe SI en mayusculas para continuar: "
+if not "%OK%"=="SI" goto debloatmenu
+set "LOG=%~dp0debloat\log_%SERIAL%.txt"
+echo. >> "%LOG%"
+echo ==== %date% %time% ==== >> "%LOG%"
+setlocal EnableDelayedExpansion
+set "OKN=0"
+set "FAILN=0"
+for /f "usebackq eol=# tokens=*" %%p in ("%~dp0debloat\uad_recommended.txt") do (
+	set "RES="
+	for /f "delims=" %%r in ('adb %ADBSEL% shell pm uninstall -k --user 0 %%p 2^>^&1') do set "RES=%%r"
+	echo !RES! | find /i "Success" >nul
+	if errorlevel 1 (
+		set /a FAILN+=1
+	) else (
+		set /a OKN+=1
+		echo %%p>>"!LOG!"
+	)
+)
+echo.
+call :c 0A "  Listo. Quitados: !OKN!   No aplicables o fallidos: !FAILN!"
+echo.
+call :c 0E "  Los que no existen en este equipo fallan sin problema."
+echo.
+endlocal
+pause
+goto debloatmenu
+
+:debloatrestore
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+set "PK="
+set /p "PK=  Nombre del paquete a restaurar (ej: com.android.chrome): "
+if not defined PK goto debloatmenu
+adb %ADBSEL% shell cmd package install-existing --user 0 %PK%
+echo.
+call :c 0A "  Hecho."
+echo.
+pause
+goto debloatmenu
 
 :nodevadb
 echo.

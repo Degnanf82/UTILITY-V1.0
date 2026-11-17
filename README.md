@@ -9,6 +9,13 @@ drivers, firmware y utilidades varias.
    para las opciones que lo requieran).
 2. Elige una opción del menú escribiendo su número.
 
+## Novedades (Fase 3: debloat)
+
+### Opción 14 → 6 — DEBLOAT SEGURO
+- **[1] Quitar paquetes seguros:** usa la lista `debloat/uad_recommended.txt` (solo paquetes marcados como *Recommended* en UAD-ng). Desinstala con `pm uninstall -k --user 0`, sin root. Pide confirmar con `SI` y guarda un registro en `debloat/log_<serial>.txt`.
+- **[2] Restaurar un paquete:** reinstala para el usuario 0 un paquete quitado (`cmd package install-existing`).
+- Fuente y licencia de la lista: `debloat/NOTICE.txt` (GPL-3.0).
+
 ## Versión 1.1
 
 ## Novedades (Fase 2)
