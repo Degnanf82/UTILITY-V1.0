@@ -32,6 +32,8 @@ Usa **samloader** (incluido en `samloader/`, licencia Apache-2.0, ver `samloader
 ### Opción 14 → 6 — DEBLOAT SEGURO
 - **[1] Quitar paquetes seguros:** usa la lista `debloat/uad_recommended.txt` (solo paquetes marcados como *Recommended* en UAD-ng). Desinstala con `pm uninstall -k --user 0`, sin root. Pide confirmar con `SI` y guarda un registro en `debloat/log_<serial>.txt`.
 - **[2] Restaurar un paquete:** reinstala para el usuario 0 un paquete quitado (`cmd package install-existing`).
+- **[3] Listar apps instaladas:** guarda y abre la lista de paquetes (solo terceros, o todas incluyendo precargadas) para ver el nombre exacto.
+- **[4] Quitar una app por nombre (manual):** quita cualquier app precargada sin root (`pm uninstall -k --user 0`), reversible, pidiendo confirmar con `SI`.
 - Fuente y licencia de la lista: `debloat/NOTICE.txt` (GPL-3.0).
 
 ## Versión 1.1
