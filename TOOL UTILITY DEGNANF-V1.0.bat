@@ -963,8 +963,11 @@ goto brickmenu
 
 :samfwmenu
 cls
-if not exist "%~dp0samloader\samloader.exe" (
-	call :c 0C "  Falta samloader\samloader.exe (ver samloader\NOTICE.txt)."
+set "SLEXE=%~dp0samloader\samloader-x64.exe"
+if /I "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "SLEXE=%~dp0samloader\samloader-arm64.exe"
+if /I "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "SLEXE=%~dp0samloader\samloader-arm64.exe"
+if not exist "%SLEXE%" (
+	call :c 0C "  Falta el binario de samloader (ver samloader\NOTICE.txt)."
 	echo.
 	pause
 	goto toolsadb
@@ -1002,7 +1005,7 @@ if not defined SFR goto samfwmenu
 echo.
 call :c 0E "  Consultando servidores de Samsung... "
 echo.
-"%~dp0samloader\samloader.exe" check-update -m %SFM% -r %SFR% -a
+"%SLEXE%" check-update -m %SFM% -r %SFR% -a
 echo.
 pause
 goto samfwmenu
@@ -1024,7 +1027,7 @@ echo  %SFO%
 echo.
 call :c 0E "  Esto puede tardar (son varios GB). No cierres la ventana."
 echo.
-"%~dp0samloader\samloader.exe" download -m %SFM% -r %SFR% -d "%SFO%"
+"%SLEXE%" download -m %SFM% -r %SFR% -d "%SFO%"
 echo.
 call :c 0A "  PROCESO TERMINADO. Revisa la carpeta y la salida de arriba."
 echo.
