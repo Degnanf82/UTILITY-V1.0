@@ -1,7 +1,7 @@
 ??&cls
 @setlocal DisableDelayedExpansion
 @echo off & pushd "%CD%" & CD /D "%~dp0"
-TITLE TOOL UTILITY BY DEGNANF V1.0
+TITLE TOOL UTILITY BY DEGNANF V1.1
 MODE con:cols=85 lines=35
 chcp 65001
 color 02
@@ -450,6 +450,8 @@ call :c 0E "   [3] "&call :c 06 "REPORTE DEL DISPOSITIVO A .TXT"
 echo.
 call :c 0E "   [4] "&call :c 06 "ESTADO DE RED Y DESBLOQUEO OFICIAL"
 echo.
+call :c 0E "   [5] "&call :c 06 "BACKUP ANTI-BRICK (EFS / PERSIST / APPS)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -459,8 +461,145 @@ if "%t%"=="1" goto apkinstall
 if "%t%"=="2" goto rebootmenu
 if "%t%"=="3" goto reportinfo
 if "%t%"=="4" goto netunlock
+if "%t%"=="5" goto backupmenu
 if "%t%"=="0" goto inicio
 goto toolsadb
+
+:backupmenu
+cls
+echo.
+call :c 05 "     BACKUP ANTI-BRICK  (requiere ROOT / su)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "RESPALDAR PARTICIONES CRITICAS (efs, persist, modemst, nvram)"
+echo.
+call :c 0E "   [2] "&call :c 06 "RESTAURAR UNA PARTICION DESDE UN RESPALDO TUYO"
+echo.
+call :c 0E "   [3] "&call :c 06 "RESPALDAR APPS Y DATOS (adb backup)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+set "b="
+set /p "b=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%b%"=="1" goto bkpdump
+if "%b%"=="2" goto bkprestore
+if "%b%"=="3" goto bkpapps
+if "%b%"=="0" goto toolsadb
+goto backupmenu
+
+:bkpdump
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+call :checkroot
+if not "%ROOTOK%"=="1" goto bkproot
+set "TS=%date:~-4%-%date:~3,2%-%date:~0,2%_%time:~0,2%%time:~3,2%"
+set "TS=%TS: =0%"
+set "BKDIR=%~dp0BACKUPS\%SERIAL%_%TS%"
+mkdir "%BKDIR%" 2>nul
+echo.
+call :c 0E "  Guardando en: "&echo %BKDIR%
+echo.
+for %%P in (efs persist modemst1 modemst2 nvram fsc fsg) do call :dumpone %%P
+echo.
+call :c 0A "  RESPALDO TERMINADO. Guarda esta carpeta a salvo (no la pierdas)."
+echo.
+pause
+goto backupmenu
+
+:dumpone
+set "PART=%~1"
+adb %ADBSEL% shell "su -c 'test -e /dev/block/by-name/%PART% && echo OK'" 2>nul | find "OK" >nul
+if errorlevel 1 (
+	echo   %PART%: no existe en este equipo, se omite
+	exit /b
+)
+echo   Respaldando %PART% ...
+adb %ADBSEL% exec-out "su -c 'dd if=/dev/block/by-name/%PART% bs=1M 2>/dev/null'" > "%BKDIR%\%PART%.img"
+exit /b
+
+:bkprestore
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+call :checkroot
+if not "%ROOTOK%"=="1" goto bkproot
+echo.
+call :c 0E "  Arrastra aqui el .img de TU respaldo (efs/persist/modemst/nvram) y ENTER:"
+echo.
+set "RF="
+set /p "RF=  IMG: "
+set "RF=%RF:"=%"
+if not exist "%RF%" (
+	echo.
+	call :c 0C "  Archivo no encontrado."
+	echo.
+	pause
+	goto backupmenu
+)
+for %%F in ("%RF%") do set "PART=%%~nF"
+echo.
+call :c 0C "  ADVERTENCIA: esto SOBRESCRIBE la particion '%PART%' del equipo."
+echo.
+call :c 0C "  Solo restaura respaldos de ESTE mismo equipo. Un error puede dejarlo sin red o sin arrancar."
+echo.
+set "OK="
+set /p "OK=  Escribe SI en mayusculas para continuar: "
+if not "%OK%"=="SI" goto backupmenu
+set "ALLOWED=0"
+for %%P in (efs persist modemst1 modemst2 nvram fsc fsg) do if /I "%PART%"=="%%P" set "ALLOWED=1"
+if not "%ALLOWED%"=="1" (
+	call :c 0C "  Nombre de particion no permitido: %PART%"
+	echo.
+	pause
+	goto backupmenu
+)
+adb %ADBSEL% push "%RF%" /data/local/tmp/restore.img
+adb %ADBSEL% shell "su -c 'dd if=/data/local/tmp/restore.img of=/dev/block/by-name/%PART% bs=1M && rm -f /data/local/tmp/restore.img'"
+echo.
+call :c 0A "  RESTAURACION TERMINADA. Reinicia el equipo."
+echo.
+pause
+goto backupmenu
+
+:bkpapps
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "TS=%date:~-4%-%date:~3,2%-%date:~0,2%_%time:~0,2%%time:~3,2%"
+set "TS=%TS: =0%"
+set "BKDIR=%~dp0BACKUPS\%SERIAL%_%TS%"
+mkdir "%BKDIR%" 2>nul
+echo.
+call :c 0E "  Desbloquea el telefono y CONFIRMA el respaldo en la pantalla."
+echo.
+adb %ADBSEL% backup -apk -shared -all -f "%BKDIR%\apps.ab"
+echo.
+call :c 0A "  RESPALDO DE APPS TERMINADO: %BKDIR%"
+echo.
+pause
+goto backupmenu
+
+:checkroot
+set "ROOTOK=0"
+for /f "delims=" %%r in ('adb %ADBSEL% shell "su -c id -u" 2^>nul') do set "RID=%%r"
+if "%RID%"=="0" set "ROOTOK=1"
+set "RID="
+exit /b
+
+:bkproot
+echo.
+call :c 0C "  Se requiere ROOT (su) en el equipo para esta funcion."
+echo.
+pause
+goto backupmenu
 
 :apkinstall
 cls

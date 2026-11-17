@@ -9,6 +9,20 @@ drivers, firmware y utilidades varias.
    para las opciones que lo requieran).
 2. Elige una opción del menú escribiendo su número.
 
+## Versión 1.1
+
+## Novedades (Fase 2)
+
+### Opción 14 → 5 — BACKUP ANTI-BRICK (requiere root / su)
+
+| Opción | Función |
+|--------|---------|
+| 1 | **Respaldar particiones críticas** (`efs`, `persist`, `modemst1/2`, `nvram`, `fsc`, `fsg`) a la carpeta `BACKUPS\<serial>_<fecha>\` como `.img`. |
+| 2 | **Restaurar una partición** desde un respaldo **de ese mismo equipo**. Pide confirmar escribiendo `SI`, y solo permite las particiones de la lista anterior. |
+| 3 | **Respaldar apps y datos** con `adb backup` (confirmas en la pantalla del teléfono). |
+
+> Haz el respaldo de `efs`/`persist` **antes** de flashear firmware. Guarda esas carpetas fuera del equipo.
+
 ## Novedades (Fase 1)
 
 ### Estado del dispositivo en el menú
