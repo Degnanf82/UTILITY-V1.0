@@ -785,17 +785,83 @@ call :c 0E "   [1] "&call :c 06 "QUITAR PAQUETES SEGUROS (reversible, sin root)"
 echo.
 call :c 0E "   [2] "&call :c 06 "RESTAURAR UN PAQUETE QUITADO"
 echo.
+call :c 0E "   [3] "&call :c 06 "LISTAR APPS INSTALADAS (ver nombre del paquete)"
+echo.
+call :c 0E "   [4] "&call :c 06 "QUITAR UNA APP POR NOMBRE (manual, reversible)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER"
 echo.
 echo.
-call :c 0E "   Fuente: debloat\uad_recommended.txt (GPL-3.0, ver debloat\NOTICE.txt)"
+call :c 0E "   Fuente lista segura: debloat\uad_recommended.txt (GPL-3.0, ver debloat\NOTICE.txt)"
 echo.
 echo.
 set "d="
 set /p "d=  ╚═════►  SELECCIONE UNA OPCION: "
 if "%d%"=="1" goto debloatrun
 if "%d%"=="2" goto debloatrestore
+if "%d%"=="3" goto debloatlist
+if "%d%"=="4" goto debloatone
 if "%d%"=="0" goto toolsadb
+goto debloatmenu
+
+:debloatlist
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+call :c 0E "  [1] Solo apps de terceros (instaladas por el usuario)"
+echo.
+call :c 0E "  [2] Todas (incluye apps del sistema / precargadas)"
+echo.
+set "lf="
+set /p "lf=  Opcion (1/2): "
+set "LPO=-3"
+if "%lf%"=="2" set "LPO="
+set "LST=%~dp0debloat\apps_%SERIAL%.txt"
+adb %ADBSEL% shell pm list packages %LPO% > "%LST%"
+echo.
+call :c 0A "  Guardado en: "&echo %LST%
+echo.
+call :c 0E "  Se abrira para que copies el nombre (ej: com.facebook.katana)."
+echo.
+pause
+start "" notepad "%LST%"
+goto debloatmenu
+
+:debloatone
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+call :c 0E "  Escribe el nombre del paquete a quitar (ej: com.facebook.katana):"
+echo.
+set "PK="
+set /p "PK=  Paquete: "
+if not defined PK goto debloatmenu
+echo.
+call :c 0C "  Se quitara '%PK%' para el usuario 0. Es reversible con la opcion [2]."
+echo.
+set "OK="
+set /p "OK=  Escribe SI en mayusculas para continuar: "
+if not "%OK%"=="SI" goto debloatmenu
+set "LOG=%~dp0debloat\log_%SERIAL%.txt"
+echo. >> "%LOG%"
+echo ==== %date% %time% (manual) ==== >> "%LOG%"
+set "RES="
+for /f "delims=" %%r in ('adb %ADBSEL% shell pm uninstall -k --user 0 %PK% 2^>^&1') do set "RES=%%r"
+echo %RES% | find /i "Success" >nul
+if errorlevel 1 (
+	call :c 0C "  No se pudo quitar: %RES%"
+) else (
+	echo %PK%>>"%LOG%"
+	call :c 0A "  Hecho: %PK%"
+)
+echo.
+pause
 goto debloatmenu
 
 :debloatrun
