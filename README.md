@@ -9,6 +9,15 @@ drivers, firmware y utilidades varias.
    para las opciones que lo requieran).
 2. Elige una opción del menú escribiendo su número.
 
+## Novedades (Fase 5: firmware Samsung oficial)
+
+### Opción 14 → 8 — FIRMWARE SAMSUNG (descarga oficial)
+Usa **samloader** (incluido en `samloader/`, licencia Apache-2.0, ver `samloader/NOTICE.txt`).
+- **[1] Ver última versión disponible:** consulta los servidores de Samsung (`check-update`).
+- **[2] Descargar firmware oficial:** descarga la última versión a `FIRMWARE\<modelo>_<region>\` (`download`).
+- No necesita el equipo conectado. Pide **modelo** (ej. `SM-A325M`) y **CSC/región** (ej. `COO`, `UNE`, `XAA`).
+- El binario es el release oficial de `topjohnwu/samloader-rs`, sin modificar (SHA-256 en el NOTICE).
+
 ## Novedades (Fase 4: recuperación de equipo)
 
 ### Opción 14 → 7 — RECUPERACION DE EQUIPO (solo firmware oficial)

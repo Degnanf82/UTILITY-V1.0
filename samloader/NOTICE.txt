@@ -1,0 +1,13 @@
+samloader.exe
+=============
+Herramienta oficial para descargar (y flashear) firmware oficial de Samsung.
+
+Proyecto : samloader-rs
+Autor    : John "topjohnwu" Wu y colaboradores
+Origen   : https://github.com/topjohnwu/samloader-rs
+Release  : v2.2.0 (Windows x86_64)
+Descarga : https://github.com/topjohnwu/samloader-rs/releases/download/2.2.0/samloader-v2.2.0-windows-x86_64.zip
+SHA-256  : b83b8244ecc86ecb4f5efc08e1604214d869838ca59b329e02a34e70832d175b
+Licencia : Apache License 2.0 (ver LICENSE en esta carpeta)
+
+Este binario se distribuye sin modificaciones, tal como lo publica el proyecto.

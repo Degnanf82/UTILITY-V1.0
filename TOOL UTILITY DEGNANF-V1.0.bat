@@ -456,6 +456,8 @@ call :c 0E "   [6] "&call :c 06 "DEBLOAT SEGURO (paquetes recomendados)"
 echo.
 call :c 0E "   [7] "&call :c 06 "RECUPERACION DE EQUIPO (fastboot, firmware oficial)"
 echo.
+call :c 0E "   [8] "&call :c 06 "FIRMWARE SAMSUNG (descarga oficial - samloader)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -468,6 +470,7 @@ if "%t%"=="4" goto netunlock
 if "%t%"=="5" goto backupmenu
 if "%t%"=="6" goto debloatmenu
 if "%t%"=="7" goto brickmenu
+if "%t%"=="8" goto samfwmenu
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -957,6 +960,76 @@ call :c 0C "  No hay equipo en modo FASTBOOT. Apagalo y entra con Vol- + USB (o 
 echo.
 pause
 goto brickmenu
+
+:samfwmenu
+cls
+if not exist "%~dp0samloader\samloader.exe" (
+	call :c 0C "  Falta samloader\samloader.exe (ver samloader\NOTICE.txt)."
+	echo.
+	pause
+	goto toolsadb
+)
+echo.
+call :c 05 "     FIRMWARE SAMSUNG  (descarga oficial via samloader)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "VER ULTIMA VERSION DISPONIBLE"
+echo.
+call :c 0E "   [2] "&call :c 06 "DESCARGAR FIRMWARE OFICIAL"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+call :c 0E "   No requiere conectar el equipo. Necesitas MODELO (ej: SM-A325M) y CSC/REGION (ej: COO, UNE, XAA)."
+echo.
+echo.
+set "sf="
+set /p "sf=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%sf%"=="1" goto samfwcheck
+if "%sf%"=="2" goto samfwdl
+if "%sf%"=="0" goto toolsadb
+goto samfwmenu
+
+:samfwcheck
+cls
+echo.
+set "SFM="
+set /p "SFM=  MODELO (ej: SM-A325M): "
+if not defined SFM goto samfwmenu
+set "SFR="
+set /p "SFR=  CSC / REGION (ej: COO): "
+if not defined SFR goto samfwmenu
+echo.
+call :c 0E "  Consultando servidores de Samsung... "
+echo.
+"%~dp0samloader\samloader.exe" check-update -m %SFM% -r %SFR% -a
+echo.
+pause
+goto samfwmenu
+
+:samfwdl
+cls
+echo.
+set "SFM="
+set /p "SFM=  MODELO (ej: SM-A325M): "
+if not defined SFM goto samfwmenu
+set "SFR="
+set /p "SFR=  CSC / REGION (ej: COO): "
+if not defined SFR goto samfwmenu
+set "SFO=%~dp0FIRMWARE\%SFM%_%SFR%"
+mkdir "%SFO%" 2>nul
+echo.
+call :c 0E "  Descargando la ultima version oficial a:"
+echo  %SFO%
+echo.
+call :c 0E "  Esto puede tardar (son varios GB). No cierres la ventana."
+echo.
+"%~dp0samloader\samloader.exe" download -m %SFM% -r %SFR% -d "%SFO%"
+echo.
+call :c 0A "  PROCESO TERMINADO. Revisa la carpeta y la salida de arriba."
+echo.
+pause
+goto samfwmenu
 
 :nodevadb
 echo.
