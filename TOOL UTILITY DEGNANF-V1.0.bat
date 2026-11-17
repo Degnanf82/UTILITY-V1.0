@@ -68,7 +68,7 @@ call :c D2 "LISTO"
 echo.
 echo.
 call :c 04 "[PRECIONE CUALQUIER TECLA PARA REGRESAR]"
-pause >null
+pause >nul
 goto:inicio
 
 
@@ -149,7 +149,7 @@ goto:SPD
 :option-4 SAMS
 goto:SAMS
 :option-5 OPPO
-:goto:OPPO
+goto:OPPO
 :option-6 MOTO
 goto:MOTO
 :option-7 HUA
@@ -367,7 +367,7 @@ goto:inicio
 		:up3
 		echo.
 		call :c 0E " ══════════► DESACTIVANDO UPDATES	: "
-		adb shell pm uninstall -k -usuario 0 com.android.updater >NUL
+		adb shell pm uninstall -k --user 0 com.android.updater >NUL
 		call :c 0A "LISTO"
     echo.
 	echo.
