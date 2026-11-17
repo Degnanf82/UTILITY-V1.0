@@ -448,6 +448,8 @@ call :c 0E "   [2] "&call :c 06 "REINICIAR A MODO (recovery/bootloader/edl...)"
 echo.
 call :c 0E "   [3] "&call :c 06 "REPORTE DEL DISPOSITIVO A .TXT"
 echo.
+call :c 0E "   [4] "&call :c 06 "ESTADO DE RED Y DESBLOQUEO OFICIAL"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -456,6 +458,7 @@ set /p "t=  ╚═════►  SELECCIONE UNA OPCION: "
 if "%t%"=="1" goto apkinstall
 if "%t%"=="2" goto rebootmenu
 if "%t%"=="3" goto reportinfo
+if "%t%"=="4" goto netunlock
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -557,6 +560,69 @@ type "%RPT%"
 echo.
 call :c 0A "  GUARDADO EN: "
 echo  %RPT%
+echo.
+pause
+goto toolsadb
+
+:netunlock
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "nu_marca= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.manufacturer') do set "nu_marca=%%a"
+set "nu_modelo= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.model') do set "nu_modelo=%%a"
+set "nu_oper= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.operator.alpha') do set "nu_oper=%%a"
+set "nu_opernum= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.operator.numeric') do set "nu_opernum=%%a"
+set "nu_net= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.operator.alpha') do set "nu_net=%%a"
+set "nu_sim= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.state') do set "nu_sim=%%a"
+set "nu_carrier= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.boot.carrierid') do set "nu_carrier=%%a"
+set "nu_csc= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.csc.omcnw_code') do set "nu_csc=%%a"
+set "nu_imei= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell "service call iphonesubinfo 1 ^| cut -c 52-66 ^| tr -d '.[:space:]'"') do set "nu_imei=%%a"
+cls
+echo.
+call :c 05 "        ESTADO DE RED  (solo lectura)  "
+echo.
+echo.
+call :c 0E " MARCA / MODELO     : "&call :c 06 "%nu_marca% %nu_modelo%"
+echo.
+call :c 0E " IMEI               : "&call :c 06 "%nu_imei%"
+echo.
+call :c 0E " OPERADOR SIM       : "&call :c 06 "%nu_oper% (%nu_opernum%)"
+echo.
+call :c 0E " RED REGISTRADA     : "&call :c 06 "%nu_net%"
+echo.
+call :c 0E " ESTADO SIM         : "&call :c 06 "%nu_sim%"
+echo.
+call :c 0E " CSC / CARRIER ID   : "&call :c 06 "%nu_csc% / %nu_carrier%"
+echo.
+echo.
+call :c 0E " Para ver el ESTADO DE BLOQUEO en Samsung, marca en el telefono: "
+echo.
+call :c 06 "   *#7465625#   "&call :c 0E "(muestra Network Lock ON/OFF)"
+echo.
+echo.
+call :c 05 " ===============  DESBLOQUEO OFICIAL  =============== "
+echo.
+call :c 06 "  - Operador: si el equipo ya esta pagado / fuera de contrato,"
+echo.
+call :c 06 "    el OPERADOR entrega el codigo o lo libera por OTA (tu derecho)."
+echo.
+call :c 06 "  - Fabricante: Samsung y otras marcas liberan via servicio oficial."
+echo.
+call :c 06 "  - Si YA tienes el codigo oficial, el telefono lo pedira al insertar"
+echo.
+call :c 06 "    una SIM de otra red; ingresalo ahi."
+echo.
 echo.
 pause
 goto toolsadb

@@ -23,6 +23,7 @@ Submenú con:
 | 1 | **Instalar APK** — arrastra el `.apk` a la ventana y se instala (`adb install -r`). |
 | 2 | **Reiniciar a modo** — recovery, bootloader, fastbootd, download/Odin, EDL 9008 o sistema. |
 | 3 | **Reporte del dispositivo a .txt** — genera `REPORTE_<serial>.txt` con marca, modelo, Android, parche de seguridad, chipset, IMEI, etc. |
+| 4 | **Estado de red y desbloqueo oficial** — muestra (solo lectura) operador, estado SIM, IMEI y CSC, y explica cómo pedir el desbloqueo **oficial** al operador/fabricante. No fuerza ni evade el candado de red. |
 
 Todas detectan automáticamente el dispositivo y, si hay **varios conectados**,
 piden el serial a usar (`adb -s`).
