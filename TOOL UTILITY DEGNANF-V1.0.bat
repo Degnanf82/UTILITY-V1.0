@@ -1,17 +1,23 @@
 ??&cls
 @setlocal DisableDelayedExpansion
 @echo off & pushd "%CD%" & CD /D "%~dp0"
-TITLE TOOL UTILITY BY DEGNANF V1.0
+TITLE TOOL UTILITY BY DEGNANF V1.1
 MODE con:cols=85 lines=35
 chcp 65001
 color 02
 set current_dir=%cd%
+call :loadconfig
 
 
 :inicio
 cls
 call :c 05 "                                   BIENVENID@: %USERNAME%  "
 echo.
+call :estado
+call :c 0E "                    DISPOSITIVO CONECTADO: "
+if /I "%DEVSTATE%"=="ADB" call :c 0A "ADB"
+if /I "%DEVSTATE%"=="FASTBOOT" call :c 0B "FASTBOOT"
+if /I "%DEVSTATE%"=="NINGUNO" call :c 0C "NINGUNO"
 echo.
 echo  █████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗█████╗
 echo  ╚════╝╚════╝╚════╝╚════╝╚═══
@@ -28,7 +34,7 @@ echo  ██║░░░░░[5: WINDOWS DEFENDER REMOVE]░░░░░░░�
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░[6: DRIVERS FOR ANDROID (ALL)]░░░░░░[13: ACTIVAR PUERTO DIAG (MI)(ROOT)]░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
-echo  ██║░░░░░[7: SCREEN MIRROR ANDROID(ADB)]░░░░░[14: ]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
+echo  ██║░░░░░[7: SCREEN MIRROR ANDROID(ADB)]░░░░░[14: HERRAMIENTAS ADB/FASTBOOT]░░░░░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
@@ -63,12 +69,12 @@ goto:inicio
 echo.
 echo.
 call :c 0E " ══════════► DIRIGIENDO A LA DESCARGA:     "
-start https://www.mediafire.com/file/nwy3evzmbaavbz4/Visual-C-Runtimes-All-in-One-May-2023.rar/file
+start "" "%CFG_VISUALC%"
 call :c D2 "LISTO"
 echo.
 echo.
 call :c 04 "[PRECIONE CUALQUIER TECLA PARA REGRESAR]"
-pause >null
+pause >nul
 goto:inicio
 
 
@@ -149,7 +155,7 @@ goto:SPD
 :option-4 SAMS
 goto:SAMS
 :option-5 OPPO
-:goto:OPPO
+goto:OPPO
 :option-6 MOTO
 goto:MOTO
 :option-7 HUA
@@ -170,61 +176,61 @@ echo.
 
 :QCM
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVER.QUALCOMM.rar
+    start "" "%CFG_DRV_QCM%"
     echo.
 goto:op6
 
 :MTK
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/MTK.DRIVER.rar
+    start "" "%CFG_DRV_MTK%"
     echo.
 goto:op6
 
 :SPD
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVER.SPRD.rar
+    start "" "%CFG_DRV_SPD%"
     echo.
 goto:op6
 
 :SAMS
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/SAMSUNG.DRIVER.rar
+    start "" "%CFG_DRV_SAMS%"
     echo.
 goto:op6
 
 :MOTO
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/MOTOROLA.DRIVER.rar
+    start "" "%CFG_DRV_MOTO%"
     echo.
 goto:op6
 
 :OPPO
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/OPPO.DRIVER.rar
+    start "" "%CFG_DRV_OPPO%"
     echo.
 goto:op6
 
 :HUA
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVER.HUAWEI.HONOR.rar
+    start "" "%CFG_DRV_HUA%"
     echo.
 goto:op6
 
 :XIA
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/XIAOMI.DRIVER.rar
+    start "" "%CFG_DRV_XIA%"
     echo.
 goto:op6
 
 :LIB
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/libusb-win32-devel-filter-1.2.6.0.rar
+    start "" "%CFG_DRV_LIB%"
     echo.
 goto:op6
 
 :ALL
 echo.
-    start "" https://github.com/joseph-nc/DRIVERS-ANDROID/releases/download/V1/DRIVERS_ANDROID.rar
+    start "" "%CFG_DRV_ALL%"
     echo.
 goto:op6
 
@@ -246,7 +252,7 @@ goto:inicio
 :op9
 echo.
 	SET /p modelo= ^> ══════════► ESCRIBA EL MODELO (EJ: A325M): 
-	start "" https://samfw.com/firmware/SM-%modelo%
+	start "" "%CFG_URL_SAMFW%%modelo%"
   echo.
 goto:inicio
 
@@ -367,7 +373,7 @@ goto:inicio
 		:up3
 		echo.
 		call :c 0E " ══════════► DESACTIVANDO UPDATES	: "
-		adb shell pm uninstall -k -usuario 0 com.android.updater >NUL
+		adb shell pm uninstall -k --user 0 com.android.updater >NUL
 		call :c 0A "LISTO"
     echo.
 	echo.
@@ -424,7 +430,617 @@ goto:inicio
 goto:inicio
 
 :op14
-goto:soon
+:toolsadb
+cls
+echo.
+call :c 05 "        HERRAMIENTAS ADB / FASTBOOT  "
+echo.
+call :estado
+call :c 0E "        DISPOSITIVO CONECTADO: "
+if /I "%DEVSTATE%"=="ADB" call :c 0A "ADB"
+if /I "%DEVSTATE%"=="FASTBOOT" call :c 0B "FASTBOOT"
+if /I "%DEVSTATE%"=="NINGUNO" call :c 0C "NINGUNO"
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "INSTALAR APK (arrastra el archivo)"
+echo.
+call :c 0E "   [2] "&call :c 06 "REINICIAR A MODO (recovery/bootloader/edl...)"
+echo.
+call :c 0E "   [3] "&call :c 06 "REPORTE DEL DISPOSITIVO A .TXT"
+echo.
+call :c 0E "   [4] "&call :c 06 "ESTADO DE RED Y DESBLOQUEO OFICIAL"
+echo.
+call :c 0E "   [5] "&call :c 06 "BACKUP ANTI-BRICK (EFS / PERSIST / APPS)"
+echo.
+call :c 0E "   [6] "&call :c 06 "DEBLOAT SEGURO (paquetes recomendados)"
+echo.
+call :c 0E "   [7] "&call :c 06 "RECUPERACION DE EQUIPO (fastboot, firmware oficial)"
+echo.
+call :c 0E "   [8] "&call :c 06 "FIRMWARE SAMSUNG (descarga oficial - samloader)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
+echo.
+echo.
+set "t="
+set /p "t=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%t%"=="1" goto apkinstall
+if "%t%"=="2" goto rebootmenu
+if "%t%"=="3" goto reportinfo
+if "%t%"=="4" goto netunlock
+if "%t%"=="5" goto backupmenu
+if "%t%"=="6" goto debloatmenu
+if "%t%"=="7" goto brickmenu
+if "%t%"=="8" goto samfwmenu
+if "%t%"=="0" goto inicio
+goto toolsadb
+
+:backupmenu
+cls
+echo.
+call :c 05 "     BACKUP ANTI-BRICK  (requiere ROOT / su)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "RESPALDAR PARTICIONES CRITICAS (efs, persist, modemst, nvram)"
+echo.
+call :c 0E "   [2] "&call :c 06 "RESTAURAR UNA PARTICION DESDE UN RESPALDO TUYO"
+echo.
+call :c 0E "   [3] "&call :c 06 "RESPALDAR APPS Y DATOS (adb backup)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+set "b="
+set /p "b=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%b%"=="1" goto bkpdump
+if "%b%"=="2" goto bkprestore
+if "%b%"=="3" goto bkpapps
+if "%b%"=="0" goto toolsadb
+goto backupmenu
+
+:bkpdump
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+call :checkroot
+if not "%ROOTOK%"=="1" goto bkproot
+set "TS=%date:~-4%-%date:~3,2%-%date:~0,2%_%time:~0,2%%time:~3,2%"
+set "TS=%TS: =0%"
+set "BKDIR=%~dp0BACKUPS\%SERIAL%_%TS%"
+mkdir "%BKDIR%" 2>nul
+echo.
+call :c 0E "  Guardando en: "&echo %BKDIR%
+echo.
+for %%P in (efs persist modemst1 modemst2 nvram fsc fsg) do call :dumpone %%P
+echo.
+call :c 0A "  RESPALDO TERMINADO. Guarda esta carpeta a salvo (no la pierdas)."
+echo.
+pause
+goto backupmenu
+
+:dumpone
+set "PART=%~1"
+adb %ADBSEL% shell "su -c 'test -e /dev/block/by-name/%PART% && echo OK'" 2>nul | find "OK" >nul
+if errorlevel 1 (
+	echo   %PART%: no existe en este equipo, se omite
+	exit /b
+)
+echo   Respaldando %PART% ...
+adb %ADBSEL% exec-out "su -c 'dd if=/dev/block/by-name/%PART% bs=1M 2>/dev/null'" > "%BKDIR%\%PART%.img"
+exit /b
+
+:bkprestore
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+call :checkroot
+if not "%ROOTOK%"=="1" goto bkproot
+echo.
+call :c 0E "  Arrastra aqui el .img de TU respaldo (efs/persist/modemst/nvram) y ENTER:"
+echo.
+set "RF="
+set /p "RF=  IMG: "
+set "RF=%RF:"=%"
+if not exist "%RF%" (
+	echo.
+	call :c 0C "  Archivo no encontrado."
+	echo.
+	pause
+	goto backupmenu
+)
+for %%F in ("%RF%") do set "PART=%%~nF"
+echo.
+call :c 0C "  ADVERTENCIA: esto SOBRESCRIBE la particion '%PART%' del equipo."
+echo.
+call :c 0C "  Solo restaura respaldos de ESTE mismo equipo. Un error puede dejarlo sin red o sin arrancar."
+echo.
+set "OK="
+set /p "OK=  Escribe SI en mayusculas para continuar: "
+if not "%OK%"=="SI" goto backupmenu
+set "ALLOWED=0"
+for %%P in (efs persist modemst1 modemst2 nvram fsc fsg) do if /I "%PART%"=="%%P" set "ALLOWED=1"
+if not "%ALLOWED%"=="1" (
+	call :c 0C "  Nombre de particion no permitido: %PART%"
+	echo.
+	pause
+	goto backupmenu
+)
+adb %ADBSEL% push "%RF%" /data/local/tmp/restore.img
+adb %ADBSEL% shell "su -c 'dd if=/data/local/tmp/restore.img of=/dev/block/by-name/%PART% bs=1M && rm -f /data/local/tmp/restore.img'"
+echo.
+call :c 0A "  RESTAURACION TERMINADA. Reinicia el equipo."
+echo.
+pause
+goto backupmenu
+
+:bkpapps
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "TS=%date:~-4%-%date:~3,2%-%date:~0,2%_%time:~0,2%%time:~3,2%"
+set "TS=%TS: =0%"
+set "BKDIR=%~dp0BACKUPS\%SERIAL%_%TS%"
+mkdir "%BKDIR%" 2>nul
+echo.
+call :c 0E "  Desbloquea el telefono y CONFIRMA el respaldo en la pantalla."
+echo.
+adb %ADBSEL% backup -apk -shared -all -f "%BKDIR%\apps.ab"
+echo.
+call :c 0A "  RESPALDO DE APPS TERMINADO: %BKDIR%"
+echo.
+pause
+goto backupmenu
+
+:checkroot
+set "ROOTOK=0"
+for /f "delims=" %%r in ('adb %ADBSEL% shell "su -c id -u" 2^>nul') do set "RID=%%r"
+if "%RID%"=="0" set "ROOTOK=1"
+set "RID="
+exit /b
+
+:bkproot
+echo.
+call :c 0C "  Se requiere ROOT (su) en el equipo para esta funcion."
+echo.
+pause
+goto backupmenu
+
+:apkinstall
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+call :c 0E "  Arrastra el archivo .APK a esta ventana y presiona ENTER:"
+echo.
+set "APKFILE="
+set /p "APKFILE=  APK: "
+set "APKFILE=%APKFILE:"=%"
+if not exist "%APKFILE%" (
+	echo.
+	call :c 0C "  Archivo no encontrado."
+	echo.
+	pause
+	goto toolsadb
+)
+echo.
+call :c 0E "  INSTALANDO... "
+echo.
+adb %ADBSEL% install -r "%APKFILE%"
+echo.
+call :c 0A "  PROCESO FINALIZADO"
+echo.
+pause
+goto toolsadb
+
+:rebootmenu
+cls
+echo.
+call :c 05 "        REINICIAR DISPOSITIVO A:  "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "RECOVERY"
+echo.
+call :c 0E "   [2] "&call :c 06 "BOOTLOADER (FASTBOOT)"
+echo.
+call :c 0E "   [3] "&call :c 06 "FASTBOOTD (userspace)"
+echo.
+call :c 0E "   [4] "&call :c 06 "DOWNLOAD / ODIN (Samsung)"
+echo.
+call :c 0E "   [5] "&call :c 06 "EDL 9008 (Qualcomm)"
+echo.
+call :c 0E "   [6] "&call :c 06 "SISTEMA (reinicio normal)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+set "r="
+set /p "r=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%r%"=="0" goto toolsadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+if "%r%"=="1" adb %ADBSEL% reboot recovery
+if "%r%"=="2" adb %ADBSEL% reboot bootloader
+if "%r%"=="3" adb %ADBSEL% reboot fastboot
+if "%r%"=="4" adb %ADBSEL% reboot download
+if "%r%"=="5" adb %ADBSEL% reboot edl
+if "%r%"=="6" adb %ADBSEL% reboot
+echo.
+call :c 0A "  COMANDO ENVIADO"
+echo.
+pause
+goto toolsadb
+
+:reportinfo
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "RPT=%~dp0REPORTE_%SERIAL%.txt"
+echo.
+call :c 0E "  GENERANDO REPORTE... "
+echo.
+(
+echo ================= REPORTE DISPOSITIVO =================
+echo Fecha        : %date% %time%
+echo Serial       : %SERIAL%
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.manufacturer') do echo Marca        : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.model') do echo Modelo       : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.name') do echo Nombre       : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.build.version.release') do echo Android      : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.build.version.security_patch') do echo Parche Seg.  : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.build.version.incremental') do echo Compilacion  : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.hardware.chipname') do echo Chipset      : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.version.baseband') do echo Modem        : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.state') do echo Estado SIM   : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.csc.omcnw_code') do echo CSC          : %%a
+for /f "delims=" %%a in ('adb %ADBSEL% shell "service call iphonesubinfo 1 ^| cut -c 52-66 ^| tr -d '.[:space:]'"') do echo IMEI         : %%a
+echo ======================================================
+) > "%RPT%"
+type "%RPT%"
+echo.
+call :c 0A "  GUARDADO EN: "
+echo  %RPT%
+echo.
+pause
+goto toolsadb
+
+:netunlock
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "nu_marca= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.manufacturer') do set "nu_marca=%%a"
+set "nu_modelo= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.product.model') do set "nu_modelo=%%a"
+set "nu_oper= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.operator.alpha') do set "nu_oper=%%a"
+set "nu_opernum= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.operator.numeric') do set "nu_opernum=%%a"
+set "nu_net= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.operator.alpha') do set "nu_net=%%a"
+set "nu_sim= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop gsm.sim.state') do set "nu_sim=%%a"
+set "nu_carrier= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.boot.carrierid') do set "nu_carrier=%%a"
+set "nu_csc= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell getprop ro.csc.omcnw_code') do set "nu_csc=%%a"
+set "nu_imei= "
+for /f "delims=" %%a in ('adb %ADBSEL% shell "service call iphonesubinfo 1 ^| cut -c 52-66 ^| tr -d '.[:space:]'"') do set "nu_imei=%%a"
+cls
+echo.
+call :c 05 "        ESTADO DE RED  (solo lectura)  "
+echo.
+echo.
+call :c 0E " MARCA / MODELO     : "&call :c 06 "%nu_marca% %nu_modelo%"
+echo.
+call :c 0E " IMEI               : "&call :c 06 "%nu_imei%"
+echo.
+call :c 0E " OPERADOR SIM       : "&call :c 06 "%nu_oper% (%nu_opernum%)"
+echo.
+call :c 0E " RED REGISTRADA     : "&call :c 06 "%nu_net%"
+echo.
+call :c 0E " ESTADO SIM         : "&call :c 06 "%nu_sim%"
+echo.
+call :c 0E " CSC / CARRIER ID   : "&call :c 06 "%nu_csc% / %nu_carrier%"
+echo.
+echo.
+call :c 0E " Para ver el ESTADO DE BLOQUEO en Samsung, marca en el telefono: "
+echo.
+call :c 06 "   *#7465625#   "&call :c 0E "(muestra Network Lock ON/OFF)"
+echo.
+echo.
+call :c 05 " ===============  DESBLOQUEO OFICIAL  =============== "
+echo.
+call :c 06 "  - Operador: si el equipo ya esta pagado / fuera de contrato,"
+echo.
+call :c 06 "    el OPERADOR entrega el codigo o lo libera por OTA (tu derecho)."
+echo.
+call :c 06 "  - Fabricante: Samsung y otras marcas liberan via servicio oficial."
+echo.
+call :c 06 "  - Si YA tienes el codigo oficial, el telefono lo pedira al insertar"
+echo.
+call :c 06 "    una SIM de otra red; ingresalo ahi."
+echo.
+echo.
+pause
+goto toolsadb
+
+:debloatmenu
+cls
+echo.
+call :c 05 "     DEBLOAT SEGURO  (paquetes 'Recommended' de UAD-ng)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "QUITAR PAQUETES SEGUROS (reversible, sin root)"
+echo.
+call :c 0E "   [2] "&call :c 06 "RESTAURAR UN PAQUETE QUITADO"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+call :c 0E "   Fuente: debloat\uad_recommended.txt (GPL-3.0, ver debloat\NOTICE.txt)"
+echo.
+echo.
+set "d="
+set /p "d=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%d%"=="1" goto debloatrun
+if "%d%"=="2" goto debloatrestore
+if "%d%"=="0" goto toolsadb
+goto debloatmenu
+
+:debloatrun
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+call :c 0C "  Se quitaran los paquetes marcados como SEGUROS para el usuario 0."
+echo.
+call :c 0E "  Es reversible con la opcion [2]. Se guarda un registro en debloat\log_<serial>.txt"
+echo.
+set "OK="
+set /p "OK=  Escribe SI en mayusculas para continuar: "
+if not "%OK%"=="SI" goto debloatmenu
+set "LOG=%~dp0debloat\log_%SERIAL%.txt"
+echo. >> "%LOG%"
+echo ==== %date% %time% ==== >> "%LOG%"
+setlocal EnableDelayedExpansion
+set "OKN=0"
+set "FAILN=0"
+for /f "usebackq eol=# tokens=*" %%p in ("%~dp0debloat\uad_recommended.txt") do (
+	set "RES="
+	for /f "delims=" %%r in ('adb %ADBSEL% shell pm uninstall -k --user 0 %%p 2^>^&1') do set "RES=%%r"
+	echo !RES! | find /i "Success" >nul
+	if errorlevel 1 (
+		set /a FAILN+=1
+	) else (
+		set /a OKN+=1
+		echo %%p>>"!LOG!"
+	)
+)
+echo.
+call :c 0A "  Listo. Quitados: !OKN!   No aplicables o fallidos: !FAILN!"
+echo.
+call :c 0E "  Los que no existen en este equipo fallan sin problema."
+echo.
+endlocal
+pause
+goto debloatmenu
+
+:debloatrestore
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+set "PK="
+set /p "PK=  Nombre del paquete a restaurar (ej: com.android.chrome): "
+if not defined PK goto debloatmenu
+adb %ADBSEL% shell cmd package install-existing --user 0 %PK%
+echo.
+call :c 0A "  Hecho."
+echo.
+pause
+goto debloatmenu
+
+:brickmenu
+cls
+echo.
+call :c 05 "     RECUPERACION DE EQUIPO  (solo firmware OFICIAL)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "DIAGNOSTICO FASTBOOT (marca, bootloader, slot)"
+echo.
+call :c 0E "   [2] "&call :c 06 "EJECUTAR SCRIPT OFICIAL DE FLASHEO (carpeta descargada)"
+echo.
+call :c 0E "   [3] "&call :c 06 "GUIA: EDL / BROM / DOWNLOAD (servicio oficial)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+set "bk="
+set /p "bk=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%bk%"=="1" goto brickdiag
+if "%bk%"=="2" goto brickscript
+if "%bk%"=="3" goto brickguide
+if "%bk%"=="0" goto toolsadb
+goto brickmenu
+
+:brickdiag
+cls
+fastboot devices 2>nul | find /i "fastboot" >nul
+if errorlevel 1 goto brick_nofb
+echo.
+for %%v in (product unlocked current-slot slot-count) do (
+	for /f "tokens=1,* delims=:" %%a in ('fastboot getvar %%v 2^>^&1 ^| findstr /i /b "%%v"') do call :c 0E "  %%v : " & call :c 06 "%%b"
+	echo.
+)
+echo.
+call :c 0E "  Si 'unlocked' es 'no', el equipo NO aceptara imagenes sin firmar (Pixel, Xiaomi, Motorola, etc.)."
+echo.
+pause
+goto brickmenu
+
+:brickscript
+cls
+fastboot devices 2>nul | find /i "fastboot" >nul
+if errorlevel 1 goto brick_nofb
+echo.
+call :c 0E "  Arrastra aqui la CARPETA del firmware OFICIAL descargado (la que trae flash-all.bat, flash_all.bat o flashfile):"
+echo.
+set "FWDIR="
+set /p "FWDIR=  CARPETA: "
+set "FWDIR=%FWDIR:"=%"
+if not exist "%FWDIR%\" (
+	call :c 0C "  Carpeta no encontrada."
+	echo.
+	pause
+	goto brickmenu
+)
+set "FWSCRIPT="
+for %%s in (flash-all.bat flash_all.bat flashall.bat flash_all_except_storage.bat flash_all_except_data_storage.bat) do if exist "%FWDIR%\%%s" if not defined FWSCRIPT set "FWSCRIPT=%%s"
+if not defined FWSCRIPT (
+	call :c 0C "  No encontre un script de flasheo oficial en esa carpeta. Se cancela."
+	echo.
+	pause
+	goto brickmenu
+)
+echo.
+call :c 0E "  Script encontrado: "&call :c 06 "%FWSCRIPT%"
+echo.
+call :c 0C "  ADVERTENCIA: flash-all borra los datos del telefono (salvo flash_all_except_storage)."
+echo.
+call :c 0C "  Haz primero el respaldo de Fase 2 (opcion 5) si necesitas efs/persist. No sirve con el bootloader bloqueado."
+echo.
+set "OK="
+set /p "OK=  Escribe SI en mayusculas para continuar: "
+if not "%OK%"=="SI" goto brickmenu
+pushd "%FWDIR%"
+call "%FWSCRIPT%"
+popd
+echo.
+call :c 0A "  Script terminado. Revisa la salida: si dice FAILED, no reinicies; consulta al servicio oficial."
+echo.
+pause
+goto brickmenu
+
+:brickguide
+cls
+echo.
+call :c 05 "   GUIA DE RECUPERACION QUE NO AUTOMATIZO"
+echo.
+echo.
+call :c 06 "  EDL (Qualcomm 9008) y BROM (MediaTek): requieren autorizacion del fabricante"
+echo.
+call :c 06 "  o un programador firmado. Lleva el equipo a servicio oficial o centro autorizado."
+echo.
+call :c 06 "  Samsung: si entra en Download, usa su firmware oficial (la opcion se agrega con Heimdall)."
+echo.
+call :c 06 "  Huawei/Honor: eRecovery o HiSuite oficial. Nokia/HMD: Nokia Software Updater."
+echo.
+echo.
+pause
+goto brickmenu
+
+:brick_nofb
+echo.
+call :c 0C "  No hay equipo en modo FASTBOOT. Apagalo y entra con Vol- + USB (o el comando de tu marca)."
+echo.
+pause
+goto brickmenu
+
+:samfwmenu
+cls
+set "SLEXE=%~dp0samloader\samloader-x64.exe"
+if /I "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "SLEXE=%~dp0samloader\samloader-arm64.exe"
+if /I "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "SLEXE=%~dp0samloader\samloader-arm64.exe"
+if not exist "%SLEXE%" (
+	call :c 0C "  Falta el binario de samloader (ver samloader\NOTICE.txt)."
+	echo.
+	pause
+	goto toolsadb
+)
+echo.
+call :c 05 "     FIRMWARE SAMSUNG  (descarga oficial via samloader)     "
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "VER ULTIMA VERSION DISPONIBLE"
+echo.
+call :c 0E "   [2] "&call :c 06 "DESCARGAR FIRMWARE OFICIAL"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+call :c 0E "   No requiere conectar el equipo. Necesitas MODELO (ej: SM-A325M) y CSC/REGION (ej: COO, UNE, XAA)."
+echo.
+echo.
+set "sf="
+set /p "sf=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%sf%"=="1" goto samfwcheck
+if "%sf%"=="2" goto samfwdl
+if "%sf%"=="0" goto toolsadb
+goto samfwmenu
+
+:samfwcheck
+cls
+echo.
+set "SFM="
+set /p "SFM=  MODELO (ej: SM-A325M): "
+if not defined SFM goto samfwmenu
+set "SFR="
+set /p "SFR=  CSC / REGION (ej: COO): "
+if not defined SFR goto samfwmenu
+echo.
+call :c 0E "  Consultando servidores de Samsung... "
+echo.
+"%SLEXE%" check-update -m %SFM% -r %SFR% -a
+echo.
+pause
+goto samfwmenu
+
+:samfwdl
+cls
+echo.
+set "SFM="
+set /p "SFM=  MODELO (ej: SM-A325M): "
+if not defined SFM goto samfwmenu
+set "SFR="
+set /p "SFR=  CSC / REGION (ej: COO): "
+if not defined SFR goto samfwmenu
+set "SFO=%~dp0FIRMWARE\%SFM%_%SFR%"
+mkdir "%SFO%" 2>nul
+echo.
+call :c 0E "  Descargando la ultima version oficial a:"
+echo  %SFO%
+echo.
+call :c 0E "  Esto puede tardar (son varios GB). No cierres la ventana."
+echo.
+"%SLEXE%" download -m %SFM% -r %SFR% -d "%SFO%"
+echo.
+call :c 0A "  PROCESO TERMINADO. Revisa la carpeta y la salida de arriba."
+echo.
+pause
+goto samfwmenu
+
+:nodevadb
+echo.
+call :c 0C "  CONECTA EL DISPOSITIVO EN MODO ADB (Depuracion USB activada)"
+echo.
+echo.
+pause
+goto toolsadb
 
 
 ::::::::::::::DEFENDER REMOVE
@@ -1059,6 +1675,41 @@ echo.
 pause
 goto:inicio
 
+:loadconfig
+if not exist "%~dp0config.ini" exit /b
+for /f "usebackq eol=# tokens=1,* delims==" %%a in ("%~dp0config.ini") do set "%%a=%%b"
+exit /b
+
+:estado
+set "DEVSTATE="
+for /f "tokens=1" %%d in ('adb devices 2^>nul ^| findstr /r "device$"') do set "DEVSTATE=ADB"
+if not defined DEVSTATE (
+	for /f "tokens=2" %%d in ('fastboot devices 2^>nul ^| find /i "fastboot"') do set "DEVSTATE=FASTBOOT"
+)
+if not defined DEVSTATE set "DEVSTATE=NINGUNO"
+exit /b
+
+:pickdevice
+set "SERIAL="
+set "ADBSEL="
+set "_n=0"
+for /f "tokens=1" %%d in ('adb devices 2^>nul ^| findstr /r "device$"') do (set "SERIAL=%%d" & set /a _n+=1)
+if "%_n%"=="0" exit /b 1
+if %_n% GTR 1 goto pickmany
+set "ADBSEL=-s %SERIAL%"
+exit /b 0
+:pickmany
+echo.
+call :c 0E "  Hay varios dispositivos conectados:"
+echo.
+adb devices
+echo.
+set "SERIAL="
+set /p "SERIAL=  Escribe el SERIAL a usar: "
+if not defined SERIAL exit /b 1
+set "ADBSEL=-s %SERIAL%"
+exit /b 0
+
 :c
 setlocal enableDelayedExpansion
 
@@ -1116,4 +1767,4 @@ exit /b
 exit /b
 
 :salir
-    @cls&exit
+    @cls&exit

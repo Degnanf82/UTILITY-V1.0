@@ -1,0 +1,5 @@
+debloat/uad_recommended.txt contiene datos derivados de la lista de paquetes de
+Universal Android Debloater Next Generation (UAD-ng):
+https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation
+Licencia: GNU GPL v3.0. Esta lista se distribuye bajo los mismos terminos.
+Solo se incluyen las entradas marcadas como "Recommended" (seguras de quitar).

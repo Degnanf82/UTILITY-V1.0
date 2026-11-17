@@ -1,0 +1,5 @@
+# Salidas en tiempo de ejecucion (no versionar)
+FIRMWARE/
+BACKUPS/
+REPORTE_*.txt
+debloat/log_*.txt
