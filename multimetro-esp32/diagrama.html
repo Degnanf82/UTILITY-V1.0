@@ -1,0 +1,531 @@
+<title>Multímetro ESP32-C3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: una columna de lectura; cada figura es una "placa" de banco con su esquema desplazable en el teléfono */
+:root {
+  --bg: #eef2f0; --panel: #ffffff; --fg: #17201c; --muted: #56635d; --rule: #cfd8d3;
+  --accent: #0d7a63; --warn: #b4380f; --warn-bg: #fdeee6;
+  --ink: #2a3430;          /* trazos del esquema */
+  --gnd: #1d2421;          /* cable GND */
+  --v33: #d22a3f;          /* cable 3.3 V / 5 V */
+  --scl: #1d64c8;          /* cable SCL */
+  --sda: #c68300;          /* cable SDA */
+  --ana: #138a55;          /* señales analógicas */
+  --esp: #17191c; --mod: #1c5aa6; --pad: #c9a227; --silk: #f4f6f8;
+  --tag: #e6ece9;
+  --f-head: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1412; --panel: #171e1b; --fg: #e4ebe7; --muted: #9aa8a1; --rule: #2a3631;
+  --accent: #3cc5a2; --warn: #ff9a6b; --warn-bg: #2b1a12;
+  --ink: #c9d4ce; --gnd: #d9e0dc; --v33: #ff5a6e; --scl: #5c9cff; --sda: #f2b33a; --ana: #3fcf8a;
+  --esp: #08090a; --mod: #1d5ea8; --pad: #d9b23a; --silk: #f4f6f8; --tag: #232d29;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1412; --panel: #171e1b; --fg: #e4ebe7; --muted: #9aa8a1; --rule: #2a3631;
+  --accent: #3cc5a2; --warn: #ff9a6b; --warn-bg: #2b1a12;
+  --ink: #c9d4ce; --gnd: #d9e0dc; --v33: #ff5a6e; --scl: #5c9cff; --sda: #f2b33a; --ana: #3fcf8a;
+  --esp: #08090a; --mod: #1d5ea8; --pad: #d9b23a; --silk: #f4f6f8; --tag: #232d29;
+  color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-body); }
+.wrap { max-width: 920px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--f-head); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 6vw, 44px); font-weight: 700; letter-spacing: .01em; }
+h2 { font-size: 24px; font-weight: 700; }
+h3 { font-size: 18px; font-weight: 500; color: var(--muted); }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); font-size: 16px; }
+.eyebrow { font: 700 12px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+header { display: grid; gap: 10px; }
+.warn { background: var(--warn-bg); color: var(--fg); border-left: 4px solid var(--warn); padding: 12px 14px; border-radius: 4px; }
+.warn b { color: var(--warn); }
+
+section { display: grid; gap: 12px; }
+.fig { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.fig .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.fig svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.fig .cap { padding: 12px 16px 14px; border-top: 1px solid var(--rule); display: grid; gap: 8px; font-size: 14px; }
+.fig .cap ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.hint { font-size: 12px; color: var(--muted); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font: 500 12px var(--f-mono); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 22px; height: 4px; border-radius: 2px; display: inline-block; }
+
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.tbl { overflow-x: auto; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 700 12px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.pin { font: 700 14px var(--f-mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+code { font-family: var(--f-mono); font-size: .92em; }
+
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 10px; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 12px; background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+ol.steps li::before { content: counter(s); font: 700 16px var(--f-mono); color: var(--accent);
+  width: 30px; height: 30px; border: 2px solid var(--accent); border-radius: 50%; display: grid; place-items: center; }
+ol.steps li > div { min-width: 0; display: grid; gap: 2px; }
+ol.steps b { font-family: var(--f-head); font-size: 17px; }
+.ok { color: var(--accent); font-weight: 600; }
+
+.bom { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.bom div { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+.bom h4 { margin: 0 0 6px; font: 700 13px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.bom ul { margin: 0; padding-left: 18px; font-size: 14px; }
+
+/* ---- SVG ---- */
+svg text { font-family: var(--f-mono); }
+.w { fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.w-gnd { stroke: var(--gnd); } .w-v33 { stroke: var(--v33); } .w-scl { stroke: var(--scl); }
+.w-sda { stroke: var(--sda); } .w-ana { stroke: var(--ana); }
+.s { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dot { stroke: none; }
+.d-gnd { fill: var(--gnd); } .d-v33 { fill: var(--v33); } .d-scl { fill: var(--scl); } .d-sda { fill: var(--sda); }
+.d-ink { fill: var(--ink); } .d-ana { fill: var(--ana); }
+.board-esp { fill: var(--esp); } .board-mod { fill: var(--mod); }
+.pad { fill: var(--pad); stroke: var(--esp); stroke-width: 1.5; }
+.silk { fill: var(--silk); font-size: 11px; font-weight: 500; }
+.silk-b { fill: var(--silk); font-size: 13px; font-weight: 700; }
+.lbl { fill: var(--fg); font-size: 12px; font-weight: 500; }
+.lbl-m { fill: var(--muted); font-size: 11px; }
+.lbl-b { fill: var(--fg); font-size: 13px; font-weight: 700; }
+.tagbox { fill: var(--tag); stroke: var(--ink); stroke-width: 1.2; }
+.rbox { fill: var(--panel); stroke: var(--ink); stroke-width: 2; }
+.diode { fill: var(--ink); }
+.jack-r { fill: var(--v33); } .jack-k { fill: var(--gnd); }
+.t-v33 { fill: var(--v33); font-size: 12px; font-weight: 700; }
+.t-ana { fill: var(--ana); font-size: 12px; font-weight: 700; }
+.hole { fill: var(--panel); }
+.scr { fill: #050607; } .scr-t { fill: #9fe7ff; font-size: 22px; font-weight: 700; }
+.usb { fill: #b9bec4; }
+@media (prefers-reduced-motion: no-preference) { .fig { transition: border-color .2s; } .fig:hover { border-color: var(--accent); } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Guía de armado · v1.0</div>
+  <h1>Multímetro ESP32-C3</h1>
+  <p class="lead">Cableado completo para tus tres placas: ESP32-C3 Super Mini, ADS1115 y OLED 0.96". Arma por partes en el orden de la sección final y prueba cada una antes de seguir.</p>
+  <p class="warn"><b>Solo baja tensión DC.</b> Máximo 40 V y 2.5 A. Nunca conectes las puntas a 110/220 V ni a nada enchufado a la red eléctrica.</p>
+</header>
+
+<!-- ============================================================ FIG 1 -->
+<section>
+  <h2>1. Conexión principal: alimentación e I2C</h2>
+  <div class="fig">
+    <div class="scroll">
+    <svg viewBox="0 0 760 440" role="img" aria-label="Cableado entre ESP32-C3, ADS1115 y OLED">
+      <!-- ESP32-C3 Super Mini (vista superior, USB arriba) -->
+      <rect class="board-esp" x="40" y="100" width="200" height="290" rx="8"/>
+      <rect class="usb" x="110" y="86" width="60" height="38" rx="7"/>
+      <text class="silk-b" x="140" y="374" text-anchor="middle">ESP32-C3 SUPER MINI</text>
+      <!-- pines izquierda -->
+      <g>
+        <circle class="pad" cx="40" cy="150" r="7"/><circle class="pad" cx="40" cy="178" r="7"/>
+        <circle class="pad" cx="40" cy="206" r="7"/><circle class="pad" cx="40" cy="234" r="7"/>
+        <circle class="pad" cx="40" cy="262" r="7"/><circle class="pad" cx="40" cy="290" r="7"/>
+        <circle class="pad" cx="40" cy="318" r="7"/><circle class="pad" cx="40" cy="346" r="7"/>
+        <text class="silk" x="54" y="154">5 · MODO</text>
+        <text class="silk" x="54" y="182">6 · HOLD</text>
+        <text class="silk" x="54" y="210">7 · descarga</text>
+        <text class="silk" x="54" y="238">8 · SDA</text>
+        <text class="silk" x="54" y="266">9 · SCL</text>
+        <text class="silk" x="54" y="294">10 · ref 1k</text>
+        <text class="silk" x="54" y="322">20 · frec.</text>
+        <text class="silk" x="54" y="350">21 · buzzer</text>
+      </g>
+      <!-- pines derecha -->
+      <g>
+        <circle class="pad" cx="240" cy="150" r="7"/><circle class="pad" cx="240" cy="178" r="7"/>
+        <circle class="pad" cx="240" cy="206" r="7"/><circle class="pad" cx="240" cy="234" r="7"/>
+        <circle class="pad" cx="240" cy="262" r="7"/><circle class="pad" cx="240" cy="290" r="7"/>
+        <circle class="pad" cx="240" cy="318" r="7"/><circle class="pad" cx="240" cy="346" r="7"/>
+        <text class="silk" x="226" y="154" text-anchor="end">buzzer+ · 5V</text>
+        <text class="silk" x="226" y="182" text-anchor="end">G</text>
+        <text class="silk" x="226" y="210" text-anchor="end">3.3</text>
+        <text class="silk" x="226" y="238" text-anchor="end">nodo Ω · 4</text>
+        <text class="silk" x="226" y="266" text-anchor="end">ref 10k · 3</text>
+        <text class="silk" x="226" y="294" text-anchor="end">REL · 2</text>
+        <text class="silk" x="226" y="322" text-anchor="end">ref 100k · 1</text>
+        <text class="silk" x="226" y="350" text-anchor="end">ref 1M · 0</text>
+      </g>
+
+      <!-- ADS1115 -->
+      <rect class="board-mod" x="325" y="30" width="395" height="125" rx="8"/>
+      <circle class="hole" cx="347" cy="52" r="9"/><circle class="hole" cx="698" cy="52" r="9"/>
+      <text class="silk-b" x="522" y="62" text-anchor="middle">ADS1115 · ADC 16 bits</text>
+      <text class="silk" x="522" y="82" text-anchor="middle">dirección 0x48</text>
+      <g text-anchor="middle">
+        <text class="silk" x="350" y="136">VDD</text><text class="silk" x="388" y="136">GND</text>
+        <text class="silk" x="426" y="136">SCL</text><text class="silk" x="464" y="136">SDA</text>
+        <text class="silk" x="502" y="136">ADDR</text><text class="silk" x="540" y="136">ALRT</text>
+        <text class="silk" x="578" y="136">A0</text><text class="silk" x="616" y="136">A1</text>
+        <text class="silk" x="654" y="136">A2</text><text class="silk" x="692" y="136">A3</text>
+      </g>
+
+      <!-- OLED -->
+      <rect class="board-mod" x="400" y="295" width="230" height="130" rx="6"/>
+      <rect class="scr" x="420" y="332" width="190" height="80" rx="3"/>
+      <text class="scr-t" x="515" y="381" text-anchor="middle">12.345 V</text>
+      <g text-anchor="middle">
+        <text class="silk" x="440" y="322">VCC</text><text class="silk" x="480" y="322">GND</text>
+        <text class="silk" x="520" y="322">SCL</text><text class="silk" x="560" y="322">SDA</text>
+      </g>
+      <text class="silk" x="610" y="322" text-anchor="end">0x3C</text>
+
+      <!-- GND -->
+      <polyline class="w w-gnd" points="240,178 255,178 255,170 502,170"/>
+      <polyline class="w w-gnd" points="388,155 388,170"/>
+      <polyline class="w w-gnd" points="502,155 502,170"/>
+      <polyline class="w w-gnd" points="480,295 480,170"/>
+      <!-- 3.3 V -->
+      <polyline class="w w-v33" points="240,206 268,206 268,190 692,190"/>
+      <polyline class="w w-v33" points="350,155 350,190"/>
+      <polyline class="w w-v33" points="692,155 692,190"/>
+      <polyline class="w w-v33" points="440,295 440,190"/>
+      <!-- SCL (GPIO9) -->
+      <polyline class="w w-scl" points="40,262 28,262 28,410 285,410 285,210 520,210"/>
+      <polyline class="w w-scl" points="426,155 426,210"/>
+      <polyline class="w w-scl" points="520,295 520,210"/>
+      <!-- SDA (GPIO8) -->
+      <polyline class="w w-sda" points="40,234 16,234 16,422 300,422 300,230 560,230"/>
+      <polyline class="w w-sda" points="464,155 464,230"/>
+      <polyline class="w w-sda" points="560,295 560,230"/>
+      <!-- uniones -->
+      <circle class="dot d-gnd" cx="388" cy="170" r="5"/><circle class="dot d-gnd" cx="480" cy="170" r="5"/>
+      <circle class="dot d-v33" cx="350" cy="190" r="5"/><circle class="dot d-v33" cx="440" cy="190" r="5"/>
+      <circle class="dot d-scl" cx="426" cy="210" r="5"/>
+      <circle class="dot d-sda" cx="464" cy="230" r="5"/>
+
+      <!-- entradas analógicas hacia las otras figuras -->
+      <polyline class="w w-ana" points="578,155 578,245"/>
+      <polyline class="w w-ana" points="616,155 616,245"/>
+      <polyline class="w w-ana" points="654,155 654,245"/>
+      <g text-anchor="middle">
+        <rect class="tagbox" x="565" y="245" width="26" height="20" rx="4"/><text class="t-ana" x="578" y="260">V</text>
+        <rect class="tagbox" x="603" y="245" width="26" height="20" rx="4"/><text class="t-ana" x="616" y="260">Ω</text>
+        <rect class="tagbox" x="641" y="245" width="26" height="20" rx="4"/><text class="t-ana" x="654" y="260">A</text>
+      </g>
+      <text class="lbl-m" x="700" y="212" text-anchor="middle">A3 a 3.3V</text>
+    </svg>
+    </div>
+    <div class="cap">
+      <div class="legend">
+        <span><i style="background:var(--v33)"></i>3.3 V</span>
+        <span><i style="background:var(--gnd)"></i>GND</span>
+        <span><i style="background:var(--sda)"></i>SDA · GPIO 8</span>
+        <span><i style="background:var(--scl)"></i>SCL · GPIO 9</span>
+        <span><i style="background:var(--ana)"></i>entradas analógicas</span>
+      </div>
+      <ul>
+        <li><b>ADDR va a GND</b> (dirección 0x48). <b>A3 va a 3.3 V</b>: el firmware lo usa como referencia.</li>
+        <li>Suelda un capacitor de <b>100 nF</b> entre VDD y GND del ADS1115, lo más cerca posible del módulo.</li>
+        <li>Las etiquetas <b>V</b>, <b>Ω</b> y <b>A</b> de A0, A1 y A2 continúan en las figuras 2 y 3. ALRT queda libre.</li>
+        <li>Puntos rellenos = unión soldada. Los cables que se cruzan sin punto no se tocan.</li>
+      </ul>
+      <p class="hint">En el teléfono, desliza el diagrama hacia los lados.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FIG 2 -->
+<section>
+  <h2>2. Nodo Ω: resistencia, continuidad, diodo y capacitor</h2>
+  <div class="fig">
+    <div class="scroll">
+    <svg viewBox="0 0 760 290" role="img" aria-label="Circuito del nodo de resistencia">
+      <!-- etiquetas GPIO + resistencias -->
+      <g>
+        <rect class="tagbox" x="20" y="28" width="90" height="24" rx="5"/><text class="lbl-b" x="65" y="45" text-anchor="middle">GPIO 10</text>
+        <rect class="tagbox" x="20" y="78" width="90" height="24" rx="5"/><text class="lbl-b" x="65" y="95" text-anchor="middle">GPIO 3</text>
+        <rect class="tagbox" x="20" y="128" width="90" height="24" rx="5"/><text class="lbl-b" x="65" y="145" text-anchor="middle">GPIO 1</text>
+        <rect class="tagbox" x="20" y="178" width="90" height="24" rx="5"/><text class="lbl-b" x="65" y="195" text-anchor="middle">GPIO 0</text>
+        <rect class="tagbox" x="20" y="228" width="90" height="24" rx="5"/><text class="lbl-b" x="65" y="245" text-anchor="middle">GPIO 7</text>
+      </g>
+      <polyline class="s" points="110,40 170,40"/><polyline class="s" points="250,40 320,40"/>
+      <polyline class="s" points="110,90 170,90"/><polyline class="s" points="250,90 320,90"/>
+      <polyline class="s" points="110,140 170,140"/><polyline class="s" points="250,140 320,140"/>
+      <polyline class="s" points="110,190 170,190"/><polyline class="s" points="250,190 320,190"/>
+      <polyline class="s" points="110,240 170,240"/><polyline class="s" points="250,240 320,240"/>
+      <rect class="rbox" x="170" y="31" width="80" height="18" rx="2"/><text class="lbl" x="210" y="24" text-anchor="middle">1 kΩ 1%</text>
+      <rect class="rbox" x="170" y="81" width="80" height="18" rx="2"/><text class="lbl" x="210" y="74" text-anchor="middle">10 kΩ 1%</text>
+      <rect class="rbox" x="170" y="131" width="80" height="18" rx="2"/><text class="lbl" x="210" y="124" text-anchor="middle">100 kΩ 1%</text>
+      <rect class="rbox" x="170" y="181" width="80" height="18" rx="2"/><text class="lbl" x="210" y="174" text-anchor="middle">1 MΩ 1%</text>
+      <rect class="rbox" x="170" y="231" width="80" height="18" rx="2"/><text class="lbl" x="210" y="224" text-anchor="middle">220 Ω (descarga)</text>
+      <!-- bus del nodo X -->
+      <polyline class="w w-ana" points="320,40 320,240"/>
+      <circle class="dot d-ana" cx="320" cy="90" r="5"/><circle class="dot d-ana" cx="320" cy="140" r="5"/>
+      <circle class="dot d-ana" cx="320" cy="190" r="5"/>
+      <text class="t-ana" x="330" y="268">nodo X</text>
+      <polyline class="w w-ana" points="320,140 640,140"/>
+      <!-- a ADS A1 -->
+      <polyline class="w w-ana" points="390,140 390,62"/><circle class="dot d-ana" cx="390" cy="140" r="5"/>
+      <rect class="tagbox" x="342" y="38" width="96" height="24" rx="5"/><text class="lbl-b" x="390" y="55" text-anchor="middle">ADS A1</text>
+      <!-- a GPIO4 -->
+      <polyline class="w w-ana" points="490,140 490,62"/><circle class="dot d-ana" cx="490" cy="140" r="5"/>
+      <rect class="tagbox" x="442" y="38" width="96" height="24" rx="5"/><text class="lbl-b" x="490" y="55" text-anchor="middle">GPIO 4</text>
+      <!-- diodos de protección -->
+      <circle class="dot d-ana" cx="580" cy="140" r="5"/>
+      <polyline class="s" points="580,140 580,110"/><polygon class="diode" points="571,110 589,110 580,95"/>
+      <polyline class="s" points="571,95 589,95"/><polyline class="s" points="580,95 580,62"/>
+      <text class="t-v33" x="580" y="54" text-anchor="middle">3.3V</text>
+      <polyline class="s" points="580,140 580,178"/><polyline class="s" points="571,178 589,178"/>
+      <polygon class="diode" points="571,193 589,193 580,178"/><polyline class="s" points="580,193 580,222"/>
+      <polyline class="s" points="568,222 592,222"/><polyline class="s" points="573,227 587,227"/><polyline class="s" points="578,232 582,232"/>
+      <text class="lbl-m" x="602" y="108">Schottky</text><text class="lbl-m" x="602" y="190">Schottky</text>
+      <!-- polifusible y jack -->
+      <rect class="rbox" x="640" y="131" width="44" height="18" rx="2"/>
+      <text class="lbl-m" x="662" y="122" text-anchor="middle">PTC opc.</text>
+      <polyline class="s" points="684,140 718,140"/>
+      <circle class="jack-r" cx="728" cy="140" r="11"/>
+      <text class="lbl-b" x="728" y="118" text-anchor="middle">Ω</text>
+      <!-- COM -->
+      <circle class="jack-k" cx="728" cy="240" r="11"/>
+      <text class="lbl-b" x="728" y="272" text-anchor="middle">COM</text>
+      <polyline class="s" points="717,240 680,240 680,250"/>
+      <polyline class="s" points="668,250 692,250"/><polyline class="s" points="673,255 687,255"/><polyline class="s" points="678,260 682,260"/>
+    </svg>
+    </div>
+    <div class="cap">
+      <ul>
+        <li>Las 5 resistencias van de su GPIO a un mismo punto, el <b>nodo X</b>. Ese punto va al jack Ω, a <b>A1</b> del ADS1115 y a <b>GPIO 4</b>.</li>
+        <li>Diodos Schottky (BAT85, BAT43 o 1N5819): el de arriba con el <b>cátodo (raya) a 3.3 V</b>; el de abajo con el <b>cátodo al nodo</b> y el ánodo a GND.</li>
+        <li>Usa resistencias de <b>1 %</b>: de ellas depende la precisión en Ω y en capacitores.</li>
+        <li>Este jack sirve para Ω, continuidad, diodos y capacitores. <b>Nunca midas voltaje aquí.</b></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FIG 3 -->
+<section>
+  <h2>3. Entradas de voltaje (V) y corriente (A)</h2>
+  <div class="fig">
+    <div class="scroll">
+    <svg viewBox="0 0 760 280" role="img" aria-label="Divisor de voltaje y shunt de corriente">
+      <!-- ===== V ===== -->
+      <text class="lbl-b" x="20" y="24">Voltaje · hasta 40 V</text>
+      <circle class="jack-r" cx="40" cy="80" r="11"/><text class="lbl-b" x="40" y="58" text-anchor="middle">V</text>
+      <polyline class="s" points="51,80 90,80"/>
+      <rect class="rbox" x="90" y="71" width="80" height="18" rx="2"/><text class="lbl" x="130" y="64" text-anchor="middle">1 MΩ 1%</text>
+      <polyline class="w w-ana" points="170,80 330,80"/>
+      <circle class="dot d-ana" cx="210" cy="80" r="5"/><circle class="dot d-ana" cx="260" cy="80" r="5"/>
+      <rect class="tagbox" x="330" y="68" width="84" height="24" rx="5"/><text class="lbl-b" x="372" y="85" text-anchor="middle">ADS A0</text>
+      <!-- 100k a GND -->
+      <polyline class="s" points="210,80 210,110"/>
+      <rect class="rbox" x="201" y="110" width="18" height="70" rx="2"/>
+      <text class="lbl" x="150" y="150" text-anchor="middle">100 kΩ 1%</text>
+      <polyline class="s" points="210,180 210,206"/>
+      <polyline class="s" points="198,206 222,206"/><polyline class="s" points="203,211 217,211"/><polyline class="s" points="208,216 212,216"/>
+      <!-- diodos -->
+      <polyline class="s" points="260,80 260,58"/><polygon class="diode" points="251,58 269,58 260,43"/>
+      <polyline class="s" points="251,43 269,43"/><polyline class="s" points="260,43 260,34"/>
+      <text class="t-v33" x="283" y="38">3.3V</text>
+      <polyline class="s" points="260,80 260,112"/><polyline class="s" points="251,112 269,112"/>
+      <polygon class="diode" points="251,127 269,127 260,112"/><polyline class="s" points="260,127 260,150"/>
+      <polyline class="s" points="248,150 272,150"/><polyline class="s" points="253,155 267,155"/><polyline class="s" points="258,160 262,160"/>
+      <!-- COM -->
+      <circle class="jack-k" cx="40" cy="206" r="11"/><text class="lbl-b" x="40" y="240" text-anchor="middle">COM</text>
+      <polyline class="s" points="51,206 90,206 90,214"/>
+      <polyline class="s" points="78,214 102,214"/><polyline class="s" points="83,219 97,219"/><polyline class="s" points="88,224 92,224"/>
+
+      <line x1="455" y1="20" x2="455" y2="260" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="4 5"/>
+
+      <!-- ===== A ===== -->
+      <text class="lbl-b" x="480" y="24">Corriente · hasta 2.5 A</text>
+      <circle class="jack-r" cx="500" cy="80" r="11"/><text class="lbl-b" x="500" y="58" text-anchor="middle">A</text>
+      <polyline class="s" points="511,80 540,80"/>
+      <rect class="rbox" x="540" y="71" width="64" height="18" rx="9"/><text class="lbl" x="572" y="64" text-anchor="middle">fusible 3 A</text>
+      <polyline class="w w-ana" points="604,80 660,80"/>
+      <circle class="dot d-ana" cx="630" cy="80" r="5"/>
+      <rect class="tagbox" x="660" y="68" width="84" height="24" rx="5"/><text class="lbl-b" x="702" y="85" text-anchor="middle">ADS A2</text>
+      <polyline class="s" points="630,80 630,110"/>
+      <rect class="rbox" x="619" y="110" width="22" height="70" rx="2"/>
+      <text class="lbl" x="580" y="140" text-anchor="end">shunt</text>
+      <text class="lbl" x="580" y="156" text-anchor="end">0.1 Ω · 1 W</text>
+      <polyline class="s" points="630,180 630,206"/>
+      <polyline class="s" points="618,206 642,206"/><polyline class="s" points="623,211 637,211"/><polyline class="s" points="628,216 632,216"/>
+      <text class="lbl-m" x="480" y="250">Fuente (+) → carga → jack A</text>
+      <text class="lbl-m" x="480" y="268">Fuente (−) → COM</text>
+    </svg>
+    </div>
+    <div class="cap">
+      <ul>
+        <li><b>V:</b> 1 MΩ desde el jack hasta A0, y 100 kΩ desde A0 a GND (divide entre 11). Los dos Schottky van igual que en el nodo Ω.</li>
+        <li><b>A:</b> el shunt va entre A2 y GND, con <b>cables cortos y gruesos</b> porque por ahí pasa toda la corriente. Lleva el GND del shunt directo al GND del ADS1115.</li>
+        <li>El amperímetro va <b>en serie</b> con la carga, del lado negativo. Si conectas el jack A directo a una fuente, la pones en corto (para eso está el fusible).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FIG 4 -->
+<section>
+  <h2>4. Botones, buzzer y entrada de frecuencia</h2>
+  <div class="fig">
+    <div class="scroll">
+    <svg viewBox="0 0 760 290" role="img" aria-label="Botones, buzzer y entrada de frecuencia">
+      <!-- Botones -->
+      <text class="lbl-b" x="20" y="24">Botones (a GND)</text>
+      <g>
+        <rect class="tagbox" x="30" y="42" width="70" height="24" rx="5"/><text class="lbl-b" x="65" y="59" text-anchor="middle">GPIO 5</text>
+        <rect class="tagbox" x="130" y="42" width="70" height="24" rx="5"/><text class="lbl-b" x="165" y="59" text-anchor="middle">GPIO 6</text>
+        <rect class="tagbox" x="230" y="42" width="70" height="24" rx="5"/><text class="lbl-b" x="265" y="59" text-anchor="middle">GPIO 2</text>
+      </g>
+      <!-- interruptor genérico: x = 65, 165, 265 -->
+      <g>
+        <polyline class="s" points="65,66 65,120"/><circle class="s" cx="65" cy="124" r="4"/>
+        <circle class="s" cx="65" cy="170" r="4"/><polyline class="s" points="65,174 65,210"/>
+        <polyline class="s" points="69,124 88,124"/><polyline class="s" points="69,170 88,170"/>
+        <polyline class="s" points="92,118 92,176"/><polyline class="s" points="92,147 108,147"/>
+        <polyline class="s" points="53,210 77,210"/><polyline class="s" points="58,215 72,215"/><polyline class="s" points="63,220 67,220"/>
+        <text class="lbl" x="65" y="246" text-anchor="middle">MODO</text>
+      </g>
+      <g transform="translate(100 0)">
+        <polyline class="s" points="65,66 65,120"/><circle class="s" cx="65" cy="124" r="4"/>
+        <circle class="s" cx="65" cy="170" r="4"/><polyline class="s" points="65,174 65,210"/>
+        <polyline class="s" points="69,124 88,124"/><polyline class="s" points="69,170 88,170"/>
+        <polyline class="s" points="92,118 92,176"/><polyline class="s" points="92,147 108,147"/>
+        <polyline class="s" points="53,210 77,210"/><polyline class="s" points="58,215 72,215"/><polyline class="s" points="63,220 67,220"/>
+        <text class="lbl" x="65" y="246" text-anchor="middle">HOLD</text>
+      </g>
+      <g transform="translate(200 0)">
+        <polyline class="s" points="65,66 65,120"/><circle class="s" cx="65" cy="124" r="4"/>
+        <circle class="s" cx="65" cy="170" r="4"/><polyline class="s" points="65,174 65,210"/>
+        <polyline class="s" points="69,124 88,124"/><polyline class="s" points="69,170 88,170"/>
+        <polyline class="s" points="92,118 92,176"/><polyline class="s" points="92,147 108,147"/>
+        <polyline class="s" points="53,210 77,210"/><polyline class="s" points="58,215 72,215"/><polyline class="s" points="63,220 67,220"/>
+        <text class="lbl" x="65" y="246" text-anchor="middle">REL</text>
+      </g>
+      <!-- pull-up GPIO2 -->
+      <circle class="dot d-ink" cx="265" cy="90" r="4.5"/>
+      <polyline class="s" points="265,90 300,90"/>
+      <rect class="rbox" x="300" y="81" width="44" height="18" rx="2"/>
+      <text class="lbl" x="322" y="74" text-anchor="middle">10 kΩ</text>
+      <polyline class="s" points="344,90 356,90"/>
+      <text class="t-v33" x="358" y="94">3.3V</text>
+      <text class="lbl-m" x="20" y="272">GPIO 2 necesita su pull-up externo (pin de arranque).</text>
+
+      <line x1="410" y1="20" x2="410" y2="260" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="4 5"/>
+
+      <!-- Buzzer -->
+      <text class="lbl-b" x="425" y="24">Buzzer activo</text>
+      <text class="t-v33" x="560" y="50" text-anchor="middle">5V</text>
+      <polyline class="s" points="560,56 560,70"/>
+      <circle class="s" cx="560" cy="88" r="18"/><text class="lbl-b" x="560" y="93" text-anchor="middle">BZ</text>
+      <text class="lbl-m" x="584" y="76">+</text><text class="lbl-m" x="584" y="108">−</text>
+      <polyline class="s" points="560,106 560,128"/>
+      <rect class="tagbox" x="425" y="146" width="72" height="24" rx="5"/><text class="lbl-b" x="461" y="163" text-anchor="middle">GPIO 21</text>
+      <polyline class="s" points="497,158 504,158"/>
+      <rect class="rbox" x="504" y="149" width="16" height="18" rx="2"/>
+      <text class="lbl" x="512" y="190" text-anchor="middle">1 kΩ</text>
+      <polyline class="s" points="520,158 538,158"/>
+      <circle class="s" cx="550" cy="158" r="22"/>
+      <polyline class="s" points="538,144 538,172"/>
+      <polyline class="s" points="538,150 556,138 560,128"/>
+      <polyline class="s" points="538,166 556,178 560,188"/>
+      <polygon class="diode" points="551,172 560,182 547,180"/>
+      <polyline class="s" points="560,188 560,206"/>
+      <polyline class="s" points="548,206 572,206"/><polyline class="s" points="553,211 567,211"/><polyline class="s" points="558,216 562,216"/>
+      <text class="lbl" x="582" y="162">NPN</text>
+      <text class="lbl-m" x="582" y="178">2N2222 / S8050</text>
+
+      <!-- Frecuencia -->
+      <text class="lbl-b" x="640" y="24">Frecuencia</text>
+      <circle class="jack-r" cx="680" cy="62" r="11"/><text class="lbl-b" x="702" y="67">F</text>
+      <polyline class="s" points="680,73 680,92"/>
+      <rect class="rbox" x="671" y="92" width="18" height="48" rx="2"/>
+      <text class="lbl" x="700" y="121">10 kΩ</text>
+      <polyline class="w w-ana" points="680,140 680,214"/>
+      <circle class="dot d-ana" cx="680" cy="170" r="5"/>
+      <polyline class="s" points="680,170 700,170"/>
+      <text class="lbl-m" x="704" y="174">D×2</text>
+      <text class="lbl-m" x="680" y="258" text-anchor="middle">D×2 = Schottky</text>
+      <text class="lbl-m" x="680" y="272" text-anchor="middle">a 3.3V y a GND</text>
+      <rect class="tagbox" x="644" y="214" width="72" height="24" rx="5"/><text class="lbl-b" x="680" y="231" text-anchor="middle">GPIO 20</text>
+    </svg>
+    </div>
+    <div class="cap">
+      <ul>
+        <li>Botones: un lado al GPIO y el otro a GND. GPIO 5 y 6 usan el pull-up interno. <b>GPIO 2 lleva un pull-up externo de 10 kΩ a 3.3 V</b>; sin él, el ESP32 puede no arrancar.</li>
+        <li>Buzzer <b>activo</b> (pita solo con voltaje): + a 5V y − al colector del NPN. Emisor a GND y base al GPIO 21 por 1 kΩ.</li>
+        <li>Frecuencia: 10 kΩ en serie y los mismos dos Schottky que en el nodo Ω (a 3.3 V y a GND). Acepta señales cuadradas de 3.3 a 5 V con COM compartido.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TABLA -->
+<section>
+  <h2>Mapa de pines del ESP32-C3</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Pin</th><th>Conectar a</th><th>Figura</th></tr></thead>
+      <tbody>
+        <tr><td class="pin">5V</td><td>+ del buzzer</td><td>4</td></tr>
+        <tr><td class="pin">G</td><td>GND común: ADS1115, OLED, COM, shunt, botones</td><td>1</td></tr>
+        <tr><td class="pin">3.3</td><td>VDD del ADS1115, VCC de la OLED, A3, diodos y pull-up de GPIO 2</td><td>1</td></tr>
+        <tr><td class="pin">8</td><td>SDA (ADS1115 y OLED)</td><td>1</td></tr>
+        <tr><td class="pin">9</td><td>SCL (ADS1115 y OLED)</td><td>1</td></tr>
+        <tr><td class="pin">10</td><td>1 kΩ → nodo X</td><td>2</td></tr>
+        <tr><td class="pin">3</td><td>10 kΩ → nodo X</td><td>2</td></tr>
+        <tr><td class="pin">1</td><td>100 kΩ → nodo X</td><td>2</td></tr>
+        <tr><td class="pin">0</td><td>1 MΩ → nodo X</td><td>2</td></tr>
+        <tr><td class="pin">7</td><td>220 Ω → nodo X (descarga)</td><td>2</td></tr>
+        <tr><td class="pin">4</td><td>directo al nodo X</td><td>2</td></tr>
+        <tr><td class="pin">5</td><td>botón MODO → GND</td><td>4</td></tr>
+        <tr><td class="pin">6</td><td>botón HOLD → GND</td><td>4</td></tr>
+        <tr><td class="pin">2</td><td>botón REL → GND, más 10 kΩ a 3.3 V</td><td>4</td></tr>
+        <tr><td class="pin">20</td><td>entrada F por 10 kΩ</td><td>4</td></tr>
+        <tr><td class="pin">21</td><td>base del NPN por 1 kΩ</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ PASOS -->
+<section>
+  <h2>Orden de armado</h2>
+  <ol class="steps">
+    <li><div><b>Alimentación, I2C y pantalla</b>
+      <span>Arma la figura 1 sin nada más. Carga el firmware y reinicia.</span>
+      <span class="ok">Prueba: la OLED muestra «Multimetro-XXXX» y luego «DC V». En la app, «Info equipo» dice «ADS1115: detectado».</span></div></li>
+    <li><div><b>Entrada de voltaje</b>
+      <span>Divisor 1 MΩ / 100 kΩ, diodos y jacks V y COM.</span>
+      <span class="ok">Prueba: una pila AA marca unos 1.5 V y una de 9 V unos 9 V.</span></div></li>
+    <li><div><b>Nodo Ω</b>
+      <span>Las 5 resistencias, GPIO 4, A1, diodos y jack Ω.</span>
+      <span class="ok">Prueba: una resistencia de 10 kΩ marca unos 10 kΩ. Al juntar las puntas en CONT, la app pita. Un LED rojo en DIODO marca unos 1.8 V.</span></div></li>
+    <li><div><b>Capacitores</b>
+      <span>No lleva piezas nuevas: usa el nodo Ω. Descarga el capacitor antes de medir.</span>
+      <span class="ok">Prueba: un capacitor de 100 nF marca cerca de 100 nF. Sin nada conectado, pulsa REL para restar la capacitancia de los cables.</span></div></li>
+    <li><div><b>Corriente</b>
+      <span>Fusible, shunt de 0.1 Ω y jack A.</span>
+      <span class="ok">Prueba: 9 V → resistencia de 100 Ω → jack A, y COM al − de la pila. Debe marcar unos 90 mA.</span></div></li>
+    <li><div><b>Botones, buzzer y frecuencia</b>
+      <span>Figura 4.</span>
+      <span class="ok">Prueba: MODO cambia de función. En CONT, el buzzer pita al juntar las puntas.</span></div></li>
+    <li><div><b>Calibrar</b>
+      <span>En la app, botón «Calibrar», con valores conocidos de V, A, cada rango de Ω y capacitor.</span></div></li>
+  </ol>
+</section>
+
+<!-- ============================================================ MATERIALES -->
+<section>
+  <h2>Materiales</h2>
+  <div class="bom">
+    <div><h4>Ya los tienes</h4><ul><li>ESP32-C3 Super Mini</li><li>ADS1115</li><li>OLED SSD1306 0.96"</li></ul></div>
+    <div><h4>Resistencias 1 %</h4><ul><li>1 kΩ ×2 (ref. y base)</li><li>10 kΩ ×3 (ref., pull-up, frec.)</li><li>100 kΩ ×2 (ref. y divisor)</li><li>1 MΩ ×2 (ref. y divisor)</li><li>220 Ω ×1</li><li>Shunt 0.1 Ω 1 W o más</li></ul></div>
+    <div><h4>Protección</h4><ul><li>6 diodos Schottky: BAT85, BAT43 o 1N5819</li><li>Fusible rápido de 3 A con portafusible</li><li>Polifusible de 50–100 mA (opcional)</li></ul></div>
+    <div><h4>Otros</h4><ul><li>3 pulsadores</li><li>Buzzer activo de 5 V</li><li>NPN 2N2222 o S8050</li><li>Capacitor de 100 nF</li><li>5 bornes o jacks banana: COM, V, A, Ω, F</li><li>Puntas de prueba, protoboard o placa perforada</li></ul></div>
+  </div>
+</section>
+</div>
