@@ -192,7 +192,25 @@ class WifiLink(
             netCallback = cb
             cm.requestNetwork(req, cb)
         } else {
-            open(findWifiNetwork())
+            // "Ya estoy en su red": se pide al sistema la red WiFi actual aunque no tenga internet.
+            // Sin esto, Android (sobre todo Samsung) corta las conexiones (ECONNABORTED).
+            post("WiFi: preparando la red…", false)
+            val req = NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+            var opened = false
+            val cb = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    if (!opened) { opened = true; open(network) }
+                }
+                override fun onLost(network: Network) {
+                    if (!closed) post("Red WiFi del multímetro perdida", false)
+                }
+            }
+            netCallback = cb
+            cm.requestNetwork(req, cb)
+            main.postDelayed({ if (!opened && !closed) { opened = true; open(findWifiNetwork()) } }, 3000)
         }
     }
 
@@ -204,10 +222,23 @@ class WifiLink(
     private fun open(network: Network?) {
         Thread {
             try {
-                post("WiFi: conectando a $host:$port…", false)
                 // Se usa la red WiFi aunque no tenga internet (si no, Android usaria los datos moviles).
-                val s = network?.socketFactory?.createSocket() ?: Socket()
-                s.connect(InetSocketAddress(host, port), 6000)
+                var s: Socket? = null
+                var last: Exception? = null
+                for (intento in 1..3) {
+                    if (closed) return@Thread
+                    post("WiFi: conectando a $host:$port (intento $intento de 3)…", false)
+                    try {
+                        val sock = network?.socketFactory?.createSocket() ?: Socket()
+                        sock.connect(InetSocketAddress(host, port), 5000)
+                        s = sock
+                        break
+                    } catch (e: Exception) {
+                        last = e
+                        Thread.sleep(1200)
+                    }
+                }
+                if (s == null) throw last ?: Exception("sin respuesta")
                 s.tcpNoDelay = true
                 socket = s
                 out = s.getOutputStream()

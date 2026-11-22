@@ -12,8 +12,15 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.AbsoluteSizeSpan
+import android.text.style.StyleSpan
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
@@ -28,7 +35,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.CheckBox
+import android.widget.Switch
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -41,17 +48,32 @@ import java.util.Locale
 
 class MainActivity : Activity(), LinkListener {
 
-    private data class ModeInfo(val code: String, val label: String)
+    private data class ModeInfo(val code: String, val label: String, val symbol: String, val caption: String)
 
+    // Cuadricula de 4 columnas x 2 filas (la ultima celda queda libre).
     private val modes = listOf(
-        ModeInfo("DCV", "Voltaje DC"),
-        ModeInfo("FREQ", "Frecuencia"),
-        ModeInfo("DCA", "Corriente mA"),
-        ModeInfo("OHM", "Resistencia"),
-        ModeInfo("CONT", "Continuidad"),
-        ModeInfo("DIODE", "Diodo"),
-        ModeInfo("CAP", "Capacitor"),
+        ModeInfo("DCV", "Voltaje DC", "V", "Voltaje"),
+        ModeInfo("DCA", "Corriente mA", "mA", "Corriente"),
+        ModeInfo("OHM", "Resistencia", "Ω", "Resistencia"),
+        ModeInfo("CONT", "Continuidad", "•)))", "Continuidad"),
+        ModeInfo("DIODE", "Diodo", "▶|", "Diodo"),
+        ModeInfo("CAP", "Capacitor", "-||-", "Capacitor"),
+        ModeInfo("FREQ", "Frecuencia", "Hz", "Frecuencia"),
     )
+
+    private object Pal {
+        val bg = Color.parseColor("#0B0E11")
+        val card = Color.parseColor("#16202A")
+        val btn = Color.parseColor("#232C36")
+        val btnPressed = Color.parseColor("#33404D")
+        val stroke = Color.parseColor("#2E3A46")
+        val accent = Color.parseColor("#FFC107")
+        val active = Color.parseColor("#FF8A65")
+        val rec = Color.parseColor("#FF5252")
+        val text = Color.parseColor("#E8EDF2")
+        val muted = Color.parseColor("#8A97A3")
+        val green = Color.parseColor("#7CFC9A")
+    }
 
     private var link: MeterLink? = null
     private var connected = false
@@ -101,16 +123,16 @@ class MainActivity : Activity(), LinkListener {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(px(14), px(14), px(14), px(14))
-            setBackgroundColor(Color.parseColor("#0B0E11"))
+            setBackgroundColor(Pal.bg)
         }
 
-        status = text("Desconectado", 14f, Color.LTGRAY)
+        status = text("Desconectado", 13f, Pal.muted).apply { maxLines = 2 }
         root.addView(status)
-        root.addView(row(
+        root.addView(grid(3, listOf(
             button("Bluetooth") { connectBle() },
             button("WiFi") { connectWifiDialog() },
             button("Desconectar") { disconnect() },
-        ))
+        )), lp(top = 6))
 
         // Pantalla
         val screen = LinearLayout(this).apply {
@@ -140,49 +162,33 @@ class MainActivity : Activity(), LinkListener {
             topMargin = px(8)
         })
 
-        // Modos
-        root.addView(text("Función", 13f, Color.GRAY).apply { setPadding(0, px(10), 0, px(2)) })
-        val modeBtns = modes.map { m ->
-            button(m.label) { selectMode(m.code) }.also { modeButtons[m.code] = it }
-        }
-        root.addView(row(*modeBtns.subList(0, 3).toTypedArray()))
-        root.addView(row(*modeBtns.subList(3, 5).toTypedArray()))
-        root.addView(row(*modeBtns.subList(5, 7).toTypedArray()))
+        // Funciones: 4 columnas, mismo tamano
+        root.addView(section("Función"))
+        val tiles = modes.map { m -> modeTile(m).also { modeButtons[m.code] = it } }
+        root.addView(grid(4, tiles, height = 66))
 
-        // Acciones
+        // Medicion
+        root.addView(section("Medición"))
         btnHold = button("HOLD") { sendCmd("HOLD") }
         btnRel = button("REL") { sendCmd("REL") }
-        root.addView(row(btnHold, btnRel, button("Borrar MIN/MAX") { sendCmd("RESET"); graph.clear() }))
+        root.addView(grid(3, listOf(btnHold, btnRel, button("Borrar mín/máx") { sendCmd("RESET"); graph.clear() })))
 
         // Registro CSV
+        root.addView(section("Registro"))
         btnRec = button("Grabar") { toggleRecording() }
-        recInfo = text("0 muestras", 13f, Color.LTGRAY).apply { gravity = Gravity.CENTER }
-        root.addView(row(btnRec, button("Guardar CSV") { saveCsv() }, recInfo))
+        recInfo = text("0 muestras", 13f, Pal.muted).apply { gravity = Gravity.CENTER }
+        root.addView(grid(3, listOf(btnRec, button("Guardar CSV") { saveCsv() }, recInfo)))
 
         // Ajustes
-        root.addView(row(
-            button("Calibrar") { calibrateDialog() },
-            button("Info equipo") { infoDialog() },
-        ))
-        val beepBox = CheckBox(this).apply {
-            text = "Pitido de continuidad en el teléfono"
-            setTextColor(Color.LTGRAY)
-            isChecked = true
-            setOnCheckedChangeListener { _, c -> phoneBeep = c }
-        }
-        val beepDev = CheckBox(this).apply {
-            text = "Buzzer del multímetro"
-            setTextColor(Color.LTGRAY)
-            isChecked = true
-            setOnCheckedChangeListener { _, c -> sendCmd("BEEP ${if (c) 1 else 0}") }
-        }
-        root.addView(beepBox)
-        root.addView(beepDev)
+        root.addView(section("Ajustes"))
+        root.addView(grid(2, listOf(button("Calibrar") { calibrateDialog() }, button("Info equipo") { infoDialog() })))
+        root.addView(switchRow("Pitido de continuidad en el teléfono") { phoneBeep = it }, lp(top = 6))
+        root.addView(switchRow("Buzzer del multímetro") { sendCmd("BEEP ${if (it) 1 else 0}") })
         root.addView(text(
             "Seguridad: solo baja tensión DC (máx. 40 V, 300 mA). No medir la red eléctrica. " +
                 "Puntas: roja en VΩmA, negra en COM.",
-            12f, Color.parseColor("#FF8A65")
-        ).apply { setPadding(0, px(8), 0, 0) })
+            12f, Pal.active
+        ).apply { setPadding(0, px(12), 0, 0) })
 
         return ScrollView(this).apply { addView(root) }
     }
@@ -197,19 +203,74 @@ class MainActivity : Activity(), LinkListener {
         text = s; textSize = size; setTextColor(color)
     }
 
+    private fun shape(fill: Int, stroke: Int, width: Int = 1) = GradientDrawable().apply {
+        cornerRadius = 12 * dp
+        setColor(fill)
+        setStroke((width * dp).toInt().coerceAtLeast(1), stroke)
+    }
+
+    /** Fondo del boton: normal / presionado; "on" lo resalta con un borde de color. */
+    private fun styleButton(b: TextView, on: Boolean = false, onColor: Int = Pal.accent) {
+        b.background = StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_pressed), shape(Pal.btnPressed, if (on) onColor else Pal.stroke, if (on) 2 else 1))
+            addState(intArrayOf(), shape(Pal.btn, if (on) onColor else Pal.stroke, if (on) 2 else 1))
+        }
+        b.setTextColor(if (on) onColor else Pal.text)
+    }
+
     private fun button(label: String, onClick: () -> Unit) = Button(this).apply {
         text = label
         isAllCaps = false
-        textSize = 13f
+        textSize = 14f
         maxLines = 1
+        minWidth = 0; minimumWidth = 0; minHeight = 0; minimumHeight = 0
+        setPadding(px(6), 0, px(6), 0)
+        stateListAnimator = null
+        styleButton(this)
         setOnClickListener { onClick() }
     }
 
-    private fun row(vararg views: View) = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        isBaselineAligned = false
-        gravity = Gravity.CENTER_VERTICAL
-        views.forEach { addView(it, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)) }
+    /** Boton de funcion: simbolo grande arriba y nombre abajo. */
+    private fun modeTile(m: ModeInfo): Button = button("") { selectMode(m.code) }.apply {
+        maxLines = 2
+        val sb = SpannableStringBuilder()
+        sb.append(m.symbol, AbsoluteSizeSpan(20, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.setSpan(StyleSpan(Typeface.BOLD), 0, m.symbol.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.append("\n")
+        sb.append(m.caption, AbsoluteSizeSpan(11, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        text = sb
+        setLineSpacing(0f, 0.95f)
+    }
+
+    /** Filas de columnas iguales; celdas vacias al final para que todo quede alineado. */
+    private fun grid(cols: Int, items: List<View>, height: Int = 48): LinearLayout {
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        items.chunked(cols).forEach { chunk ->
+            val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false }
+            for (i in 0 until cols) {
+                val v = chunk.getOrNull(i) ?: View(this)
+                r.addView(v, LinearLayout.LayoutParams(0, px(height), 1f).apply { setMargins(px(3), px(3), px(3), px(3)) })
+            }
+            box.addView(r)
+        }
+        return box
+    }
+
+    private fun section(title: String) = text(title.uppercase(), 11f, Pal.muted).apply {
+        letterSpacing = 0.12f
+        setPadding(px(4), px(14), 0, px(2))
+    }
+
+    private fun switchRow(label: String, onChange: (Boolean) -> Unit) = Switch(this).apply {
+        text = label
+        textSize = 14f
+        setTextColor(Pal.text)
+        isChecked = true
+        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        thumbTintList = ColorStateList(states, intArrayOf(Pal.accent, Pal.muted))
+        trackTintList = ColorStateList(states, intArrayOf(Color.parseColor("#806010"), Pal.btnPressed))
+        setPadding(px(4), px(8), px(4), px(8))
+        setOnCheckedChangeListener { _, c -> onChange(c) }
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
@@ -271,7 +332,7 @@ class MainActivity : Activity(), LinkListener {
             currentMode = code
             graph.clear()
             graph.unit = u
-            modeButtons.forEach { (k, b) -> b.setTextColor(if (k == code) Color.parseColor("#FFC107") else Color.WHITE) }
+            modeButtons.forEach { (k, b) -> styleButton(b, k == code) }
         }
         modeLabel.text = modes.firstOrNull { it.code == code }?.label ?: code
         val ol = j.optInt("ol") == 1
@@ -279,8 +340,8 @@ class MainActivity : Activity(), LinkListener {
         val rel = j.optInt("rel") == 1
         val v = if (j.isNull("v")) null else j.optDouble("v")
 
-        btnHold.setTextColor(if (hold) Color.parseColor("#FF8A65") else Color.WHITE)
-        btnRel.setTextColor(if (rel) Color.parseColor("#FF8A65") else Color.WHITE)
+        styleButton(btnHold, hold, Pal.active)
+        styleButton(btnRel, rel, Pal.active)
         flags.text = listOfNotNull(if (hold) "HOLD" else null, if (rel) "REL" else null).joinToString("  ")
 
         when {
@@ -427,7 +488,7 @@ class MainActivity : Activity(), LinkListener {
         isRecording = !isRecording
         if (isRecording) { recording.clear(); recInfo.text = "0 muestras" }
         btnRec.text = if (isRecording) "Detener" else "Grabar"
-        btnRec.setTextColor(if (isRecording) Color.parseColor("#FF5252") else Color.WHITE)
+        styleButton(btnRec, isRecording, Pal.rec)
     }
 
     private fun saveCsv() {

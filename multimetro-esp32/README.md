@@ -34,7 +34,7 @@ multimetro-esp32/
 ├── imagenes/            ← un dibujo por paso de armado (PNG grande)
 ├── herramientas/        ← scripts que generan el esquema, los bloques y el montaje
 ├── binarios/
-│   ├── Multimetro-v1.2.apk                      ← instalar en el teléfono
+│   ├── Multimetro-v1.3.apk                      ← instalar en el teléfono
 │   └── multimetro-firmware-v1.3.2-completo.bin    ← firmware completo (dirección 0x0)
 ├── codigo-esp32/    firmware (PlatformIO / Arduino)
 └── android/         código de la app (Kotlin, sin librerías externas)
@@ -119,7 +119,7 @@ pio device monitor       # lecturas en JSON (115200)
 
 ## 2. Instalar la app
 
-Copia `binarios/Multimetro-v1.2.apk` al teléfono e instálala (Android 7 o superior). Tendrás que permitir
+Copia `binarios/Multimetro-v1.3.apk` al teléfono e instálala (Android 7 o superior). Tendrás que permitir
 la instalación de *orígenes desconocidos*. Si la APK viene de otra máquina (por ejemplo, de GitHub Actions),
 desinstala antes la anterior, porque cambia la firma de depuración.
 
