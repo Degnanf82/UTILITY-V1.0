@@ -429,6 +429,17 @@ static void drawScreen(bool busy) {
 
 // ---------------------------------------------------------------- setup / loop
 // Mensaje de arranque en la pantalla y por el puerto serie (para saber en que paso se queda).
+void dbgStep(int n) {
+#ifdef PASOS_LED
+  pinMode(8, OUTPUT);
+  for (int i = 0; i < n; i++) {
+    digitalWrite(8, LOW); delay(250);   // LED encendido (activo en bajo)
+    digitalWrite(8, HIGH); delay(250);
+  }
+  delay(1200);
+#endif
+}
+
 static void bootMsg(const char *line1, const char *line2 = "") {
   // Sin Serial.flush(): con el USB conectado y sin consola abierta, esperaria para siempre.
   if (Serial) Serial.printf("[arranque] %s %s\n", line1, line2);
@@ -451,9 +462,12 @@ static const char *resetText(esp_reset_reason_t r) {
 }
 
 void setup() {
+  dbgStep(1);
   Serial.begin(115200);
   Serial.setTimeout(50);
+#if ARDUINO_USB_CDC_ON_BOOT
   Serial.setTxTimeoutMs(0);  // sin monitor abierto, no esperar al escribir por USB
+#endif
   pinMode(PIN_RELAY_OHM, OUTPUT);  // reles apagados lo antes posible
   digitalWrite(PIN_RELAY_OHM, LOW);
   pinMode(PIN_RELAY_MA, OUTPUT);
@@ -461,14 +475,18 @@ void setup() {
   pinMode(PIN_BUZZER, OUTPUT);
   digitalWrite(PIN_BUZZER, LOW);
 
+  dbgStep(2);
   Wire.begin(PIN_SDA, PIN_SCL);
   Wire.setClock(100000);
+  dbgStep(3);
   // La pantalla integrada siempre esta: se inicia sin depender de la deteccion.
   oledS.setI2CAddress(OLED_ADDR << 1);
   oledOk = oledS.begin();
   oledS.setContrast(255);
   esp_reset_reason_t why = esp_reset_reason();
+  dbgStep(4);
   bootMsg("Iniciando...");
+  dbgStep(5);
   if (i2cPresent(OLED_EXT_ADDR)) {
     oledL.setI2CAddress(OLED_EXT_ADDR << 1);
     oledExtOk = oledL.begin();

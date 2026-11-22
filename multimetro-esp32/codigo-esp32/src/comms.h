@@ -11,3 +11,6 @@ bool commsBleConnected();
 bool commsWifiConnected();
 String commsSsid();
 String commsIp();
+
+// Diagnostico: parpadea el LED azul (GPIO 8) n veces. Solo hace algo si se compila con PASOS_LED.
+void dbgStep(int n);

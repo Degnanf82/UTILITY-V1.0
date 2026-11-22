@@ -83,6 +83,7 @@ void commsBegin(const char *deviceName) {
   ssid = deviceName;
   // Las SuperMini se reinician (voltaje bajo) o no conectan con la potencia maxima:
   // se baja ANTES de encender el punto de acceso.
+  dbgStep(6);
   WiFi.mode(WIFI_AP);
   WiFi.setTxPower(WIFI_POWER_8_5dBm);
   delay(50);
@@ -92,6 +93,7 @@ void commsBegin(const char *deviceName) {
   tcpServer.begin();
   tcpServer.setNoDelay(true);
 
+  dbgStep(7);
   // BLE (NimBLE)
   NimBLEDevice::init(deviceName);
   NimBLEDevice::setMTU(247);
@@ -108,6 +110,7 @@ void commsBegin(const char *deviceName) {
   adv->setName(deviceName);
   adv->setScanResponse(true);
   NimBLEDevice::startAdvertising();
+  dbgStep(8);
 }
 
 void commsLoop() {
