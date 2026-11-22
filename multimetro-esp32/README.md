@@ -35,7 +35,7 @@ multimetro-esp32/
 ├── herramientas/        ← scripts que generan el esquema, los bloques y el montaje
 ├── binarios/
 │   ├── Multimetro-v1.2.apk                      ← instalar en el teléfono
-│   └── multimetro-firmware-v1.3.1-completo.bin    ← firmware completo (dirección 0x0)
+│   └── multimetro-firmware-v1.3.2-completo.bin    ← firmware completo (dirección 0x0)
 ├── codigo-esp32/    firmware (PlatformIO / Arduino)
 └── android/         código de la app (Kotlin, sin librerías externas)
 ```
@@ -107,7 +107,7 @@ Vista desde arriba con el USB-C abajo. Columna izquierda: 3, 4, 5, 6, 7, 8, 9, 1
 **Opción A, binario listo:**
 1. En la PC abre <https://espressif.github.io/esptool-js/> en Chrome o Edge.
 2. Conecta la placa por USB-C. Si no aparece, mantén **BOOT**, pulsa **RST** y suelta BOOT.
-3. **Connect**, dirección **0x0**, elige `binarios/multimetro-firmware-v1.3.1-completo.bin` y pulsa **Program**.
+3. **Connect**, dirección **0x0**, elige `binarios/multimetro-firmware-v1.3.2-completo.bin` y pulsa **Program**.
 4. Pulsa **RST**. La OLED muestra el nombre `Multimetro-XXXX` y la clave WiFi.
 
 **Opción B, compilar con PlatformIO:**

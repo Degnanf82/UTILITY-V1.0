@@ -476,8 +476,8 @@ void setup() {
   digitalWrite(PIN_BUZZER, LOW);
 
   dbgStep(2);
-  Wire.begin(PIN_SDA, PIN_SCL);
-  Wire.setClock(100000);
+  // El bus I2C (GPIO 5/6) lo inicia la libreria de la pantalla, igual que en la prueba que funciona.
+  // Iniciarlo antes con Wire.begin() dejaba la placa trabada en oledS.begin().
   dbgStep(3);
   // La pantalla integrada siempre esta: se inicia sin depender de la deteccion.
   oledS.setI2CAddress(OLED_ADDR << 1);
@@ -491,7 +491,6 @@ void setup() {
     oledL.setI2CAddress(OLED_EXT_ADDR << 1);
     oledExtOk = oledL.begin();
   }
-  Wire.setClock(400000);  // U8g2 puede cambiar el reloj al iniciar
 
   calLoad();
   bootMsg("ADC ADS1115...");
