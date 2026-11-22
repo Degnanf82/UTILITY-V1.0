@@ -1,5 +1,6 @@
 // Multimetro ESP32-C3 Super Mini + ADS1115 + OLED SSD1306 0.96"
 // Funciones: DCV, DCA, Ohm (autorango), continuidad, diodo, capacitancia, frecuencia.
+// Solo dos puntas (roja y negra); dos reles eligen el circuito segun la funcion.
 // Conexion con la app Android por Bluetooth LE y por WiFi (punto de acceso + TCP 3333).
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -23,6 +24,9 @@ static float vMin, vMax, vSum;
 static uint32_t vCount;
 static uint32_t beepUntil = 0, infoUntil = 0;
 static String devName;
+static String warnText;
+static uint32_t warnUntil = 0;
+static void sendMsg(const String &m);
 
 // ---------------------------------------------------------------- utilidades
 static void resetStats() {
@@ -33,7 +37,8 @@ static void resetStats() {
 }
 
 static void beep(uint16_t ms) {
-  if (beepOn) beepUntil = millis() + ms;
+  uint32_t until = millis() + ms;
+  if (beepOn && until > beepUntil) beepUntil = until;
 }
 
 static String num(float v) {
@@ -62,7 +67,7 @@ static void formatSI(float v, String &txt, String &prefix) {
 }
 
 static const char *modeLabel(Mode m) {
-  static const char *L[M_COUNT] = {"DC V", "DC A", "OHM", "CONTINUIDAD", "DIODO", "CAPACITOR", "FRECUENCIA"};
+  static const char *L[M_COUNT] = {"DC V", "CORRIENTE", "OHM", "CONTINUIDAD", "DIODO", "CAPACITOR", "FRECUENCIA"};
   return L[m];
 }
 
@@ -76,7 +81,24 @@ static String unitLabel(Mode m) {
   }
 }
 
+static void warn(const String &t) {
+  warnText = t;
+  warnUntil = millis() + 3000;
+  beep(400);
+  sendMsg(t);
+}
+
 static void setMode(Mode m) {
+  // Antes de conectar la punta roja al nodo X, comprueba que no haya voltaje en las puntas.
+  if (adsOk && modeUsesOhmRelay(m) && !modeUsesOhmRelay(mode)) {
+    measureSetMode(M_DCV);
+    delay(30);
+    Reading v = measureOnce(M_DCV);
+    if (v.valid && (v.ol || fabsf(v.value) > 1.0f)) {
+      m = M_DCV;
+      warn("Hay voltaje en las puntas: retiralas antes de medir Ohm/diodo/capacitor");
+    }
+  }
   mode = m;
   hold = false;
   relOn = false;
@@ -97,7 +119,7 @@ static void sendInfo() {
 }
 
 static void sendCal() {
-  String s = "{\"t\":\"cal\",\"kv\":" + num(cal.kV) + ",\"ki\":" + num(cal.kI) + ",\"r\":[";
+  String s = "{\"t\":\"cal\",\"kv\":" + num(cal.kV) + ",\"ki\":" + num(cal.kI) + ",\"vcc\":" + num(cal.vcc) + ",\"r\":[";
   for (int i = 0; i < 4; i++) s += num(cal.rRef[i]) + (i < 3 ? "," : "");
   s += "],\"kc\":[" + num(cal.kC[0]) + "," + num(cal.kC[1]) + "]}";
   commsSend(s);
@@ -166,6 +188,7 @@ static void handleCommand(String c) {
     else if (key.length() == 2 && key[0] == 'r' && key[1] >= '0' && key[1] <= '3') cal.rRef[key[1] - '0'] = v;
     else if (key == "c0") cal.kC[0] = v;
     else if (key == "c1") cal.kC[1] = v;
+    else if (key == "vcc" && v > 3.0f && v < 3.6f) cal.vcc = v;
     else { sendMsg("Clave desconocida"); return; }
     calSave();
     sendCal();
@@ -181,39 +204,55 @@ static void handleCommand(String c) {
 }
 
 // ---------------------------------------------------------------- botones
+// Los 3 botones se leen por A3 del ADS1115 (escalera de resistencias).
 struct Button {
-  uint8_t pin;
-  bool down, longDone;
-  uint32_t since;
-  explicit Button(uint8_t p) : pin(p), down(false), longDone(false), since(0) {}
+  bool down = false, longDone = false;
+  uint32_t since = 0;
 };
-static Button bMode(PIN_BTN_MODE), bHold(PIN_BTN_HOLD), bRel(PIN_BTN_REL);
+static Button bMode, bHold, bRel;
 
-// Devuelve 1 = pulsacion corta, 2 = pulsacion larga (>800 ms), 0 = nada.
-static int pollButton(Button &b) {
-  bool pressed = digitalRead(b.pin) == LOW;
+// Devuelve 1 = pulsacion corta, 2 = larga (> longMs), 0 = nada.
+static int pollButton(Button &b, bool pressed, uint32_t longMs = 900) {
   uint32_t now = millis();
   if (pressed && !b.down) {
-    if (now - b.since > 30) { b.down = true; b.longDone = false; b.since = now; }
+    b.down = true; b.longDone = false; b.since = now;
   } else if (!pressed && b.down) {
     b.down = false;
-    uint32_t dur = now - b.since;
-    b.since = now;
-    if (!b.longDone && dur > 30) return 1;
-  } else if (pressed && b.down && !b.longDone && now - b.since > 800) {
+    if (!b.longDone && now - b.since > 40) return 1;
+  } else if (pressed && b.down && !b.longDone && now - b.since > longMs) {
     b.longDone = true;
     return 2;
   }
   return 0;
 }
 
+// Orden del boton MODO. mA no esta en el ciclo: se entra con pulsacion larga (evita cortos).
+static const Mode CYCLE[] = {M_DCV, M_FREQ, M_OHM, M_CONT, M_DIODE, M_CAP};
+
 static void handleButtons() {
+  static uint32_t lastPoll = 0;
+  static int stable = 0, cand = 0, candCount = 0;
+  if (!adsOk || millis() - lastPoll < 25) return;
+  lastPoll = millis();
+  int raw = measureButtons();
+  if (raw == cand) { if (candCount < 3) candCount++; } else { cand = raw; candCount = 1; }
+  if (candCount >= 2) stable = cand;  // dos lecturas iguales seguidas
+
   int e;
-  if ((e = pollButton(bMode)) == 1) setMode((Mode)((mode + 1) % M_COUNT));
-  else if (e == 2) { setMode((Mode)((mode + M_COUNT - 1) % M_COUNT)); }  // largo: modo anterior
-  if ((e = pollButton(bHold)) == 1) { hold = !hold; beep(15); }
+  if ((e = pollButton(bMode, stable == 1, 1500)) == 1) {
+    if (mode == M_DCA) setMode(M_DCV);
+    else {
+      int i = 0;
+      while (i < 6 && CYCLE[i] != mode) i++;
+      setMode(CYCLE[(i + 1) % 6]);
+    }
+  } else if (e == 2) {
+    if (mode == M_DCA) setMode(M_DCV);
+    else { setMode(M_DCA); warnText = "Puntas EN SERIE"; warnUntil = millis() + 2000; }
+  }
+  if ((e = pollButton(bHold, stable == 2)) == 1) { hold = !hold; beep(15); }
   else if (e == 2) { resetStats(); beep(60); }                         // largo: borra MIN/MAX
-  if ((e = pollButton(bRel)) == 1) { handleCommand("REL"); beep(15); }
+  if ((e = pollButton(bRel, stable == 3)) == 1) { handleCommand("REL"); beep(15); }
   else if (e == 2) { infoUntil = millis() + 5000; }                    // largo: datos WiFi/BT
 }
 
@@ -224,6 +263,16 @@ static void drawScreen(bool busy) {
   oled.setTextColor(SSD1306_WHITE);
   oled.setTextSize(1);
 
+  if (millis() < warnUntil) {
+    oled.setCursor(0, 0);
+    oled.setTextSize(2);
+    oled.println("ATENCION");
+    oled.setTextSize(1);
+    oled.println();
+    oled.println(warnText);
+    oled.display();
+    return;
+  }
   if (millis() < infoUntil) {
     oled.setCursor(0, 0);
     oled.println("CONEXION");
@@ -295,9 +344,10 @@ static void drawScreen(bool busy) {
 void setup() {
   Serial.begin(115200);
   Serial.setTimeout(50);
-  pinMode(PIN_BTN_MODE, INPUT_PULLUP);
-  pinMode(PIN_BTN_HOLD, INPUT_PULLUP);
-  pinMode(PIN_BTN_REL, INPUT_PULLUP);
+  pinMode(PIN_RELAY_OHM, OUTPUT);  // reles apagados lo antes posible
+  digitalWrite(PIN_RELAY_OHM, LOW);
+  pinMode(PIN_RELAY_MA, OUTPUT);
+  digitalWrite(PIN_RELAY_MA, LOW);
   pinMode(PIN_BUZZER, OUTPUT);
   digitalWrite(PIN_BUZZER, LOW);
 
@@ -334,7 +384,10 @@ void loop() {
   if (!needAds || adsOk) {
     if (mode == M_CAP) drawScreen(true);  // la medicion puede tardar varios segundos
     Reading r = measureOnce(mode);
-    if (r.valid) {
+    if (r.valid && r.ext) {
+      setMode(M_DCV);
+      warn("Voltaje externo en la punta: cambiado a DC V");
+    } else if (r.valid) {
       last = r;
       if (!hold) {
         shownOl = r.ol;

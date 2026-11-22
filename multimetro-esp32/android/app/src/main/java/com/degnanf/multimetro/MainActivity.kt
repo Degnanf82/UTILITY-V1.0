@@ -45,7 +45,7 @@ class MainActivity : Activity(), LinkListener {
 
     private val modes = listOf(
         ModeInfo("DCV", "Voltaje DC"),
-        ModeInfo("DCA", "Corriente DC"),
+        ModeInfo("DCA", "Corriente (mA)"),
         ModeInfo("OHM", "Resistencia"),
         ModeInfo("CONT", "Continuidad"),
         ModeInfo("DIODE", "Diodo"),
@@ -143,7 +143,7 @@ class MainActivity : Activity(), LinkListener {
         // Modos
         root.addView(text("Función", 13f, Color.GRAY).apply { setPadding(0, px(10), 0, px(2)) })
         val modeBtns = modes.map { m ->
-            button(m.label) { sendCmd("MODE ${m.code}") }.also { modeButtons[m.code] = it }
+            button(m.label) { selectMode(m.code) }.also { modeButtons[m.code] = it }
         }
         root.addView(row(*modeBtns.subList(0, 4).toTypedArray()))
         root.addView(row(*modeBtns.subList(4, 7).toTypedArray()))
@@ -178,7 +178,8 @@ class MainActivity : Activity(), LinkListener {
         root.addView(beepBox)
         root.addView(beepDev)
         root.addView(text(
-            "Seguridad: solo baja tensión DC (máx. 40 V, 2.5 A). No medir la red eléctrica.",
+            "Seguridad: solo baja tensión DC (máx. 40 V, 300 mA). No medir la red eléctrica. " +
+                "Puntas: roja en VΩmA, negra en COM.",
             12f, Color.parseColor("#FF8A65")
         ).apply { setPadding(0, px(8), 0, 0) })
 
@@ -213,6 +214,19 @@ class MainActivity : Activity(), LinkListener {
     private fun sendCmd(cmd: String) {
         if (!connected) { toast("Primero conecta el multímetro"); return }
         link?.send(cmd)
+    }
+
+    /** Corriente pide confirmacion: con las puntas sobre una fuente seria un cortocircuito. */
+    private fun selectMode(code: String) {
+        if (code != "DCA" || currentMode == "DCA") { sendCmd("MODE $code"); return }
+        if (!connected) { toast("Primero conecta el multímetro"); return }
+        AlertDialog.Builder(this)
+            .setTitle("Medir corriente")
+            .setMessage("Coloca las puntas EN SERIE con el circuito (abre el circuito y pon el multímetro en medio).\n\n" +
+                "Nunca sobre una fuente o batería directamente: haría cortocircuito y fundiría el fusible.\n\nMáximo 300 mA.")
+            .setPositiveButton("Entendido, medir") { _, _ -> sendCmd("MODE DCA") }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun disconnect() {

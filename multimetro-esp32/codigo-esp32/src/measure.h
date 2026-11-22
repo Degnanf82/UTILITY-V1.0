@@ -9,6 +9,7 @@ struct Calib {
   float kI = 1.0f;        // factor de corriente
   float rRef[4] = {1030.0f, 10030.0f, 100030.0f, 1000030.0f};  // ref efectivas (incluye ~30 Ohm del GPIO)
   float kC[2] = {1.0f, 1.0f};  // factor de capacitancia por rango (1M, 1k)
+  float vcc = 3.30f;           // voltaje real del riel de 3.3 V
 };
 
 struct Reading {
@@ -17,6 +18,7 @@ struct Reading {
   bool valid = false;  // false = sin dato todavia
   int8_t range = -1;   // rango usado (indice de referencia / rango de capacitancia)
   float aux = 0;       // dato extra: corriente del diodo (A)
+  bool ext = false;    // hay voltaje externo en la punta (modos de Ohm)
 };
 
 extern Calib cal;
@@ -26,6 +28,10 @@ extern const char *MODE_UNITS[M_COUNT];
 bool measureBegin();
 void measureSetMode(Mode m);    // prepara el hardware para el modo (pone todo en alta impedancia)
 Reading measureOnce(Mode m);    // toma una lectura del modo actual (puede tardar en CAP)
+// Boton pulsado segun el voltaje de A3: 0 = ninguno, 1 = MODO, 2 = HOLD, 3 = REL.
+int measureButtons();
+// true si el modo usa el rele K1 (punta roja al nodo X).
+bool modeUsesOhmRelay(Mode m);
 void calLoad();
 void calSave();
 void calReset();

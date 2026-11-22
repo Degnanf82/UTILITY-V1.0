@@ -42,12 +42,31 @@ static float readAuto(uint8_t ch, int n, adsGain_t *gainOut = nullptr) {
   return sum / n;
 }
 
-static float readVcc() {
+static float readVcc() { return cal.vcc; }
+
+int measureButtons() {
   ads.setGain(GAIN_ONE);
-  float s = 0;
-  for (int i = 0; i < 4; i++) s += ads.computeVolts(ads.readADC_SingleEnded(CH_VCC));
-  float v = s / 4;
-  return (v > 2.8f && v < 3.6f) ? v : 3.3f;  // si A3 no esta conectado, usa 3.3 V
+  float v = ads.computeVolts(ads.readADC_SingleEnded(CH_BTN));
+  if (v < BTN_TH_MODE) return 1;
+  if (v < BTN_TH_HOLD) return 2;
+  if (v < BTN_TH_REL) return 3;
+  return 0;
+}
+
+bool modeUsesOhmRelay(Mode m) { return m == M_OHM || m == M_CONT || m == M_DIODE || m == M_CAP; }
+
+// ---------------------------------------------------------------- Reles
+static int8_t relayState = -1;  // 0 = V, 1 = Ohm, 2 = mA
+static void setRelays(int8_t want) {
+  if (want == relayState) return;
+  // Primero se abren los dos (nunca quedan ambos cerrados), luego se cierra el pedido.
+  digitalWrite(PIN_RELAY_OHM, LOW);
+  digitalWrite(PIN_RELAY_MA, LOW);
+  delay(RELAY_MS);
+  if (want == 1) digitalWrite(PIN_RELAY_OHM, HIGH);
+  if (want == 2) digitalWrite(PIN_RELAY_MA, HIGH);
+  if (want != 0) delay(RELAY_MS);
+  relayState = want;
 }
 
 // ---------------------------------------------------------------- Nodo X
@@ -84,6 +103,9 @@ static void IRAM_ATTR freqIsr() {
 
 // ---------------------------------------------------------------- API
 bool measureBegin() {
+  pinMode(PIN_RELAY_OHM, OUTPUT);
+  pinMode(PIN_RELAY_MA, OUTPUT);
+  setRelays(0);
   allRefsOff();
   pinMode(PIN_X_SENSE, INPUT);
   analogReadResolution(12);
@@ -97,6 +119,7 @@ bool measureBegin() {
 void measureSetMode(Mode m) {
   detachInterrupt(digitalPinToInterrupt(PIN_FREQ));
   allRefsOff();
+  setRelays(modeUsesOhmRelay(m) ? 1 : (m == M_DCA ? 2 : 0));
   if (m == M_CONT || m == M_DIODE) driveRef(0);  // 1k: unos 2.5 mA
   if (m == M_OHM) driveRef(ohmRange);
   if (m == M_FREQ) {
@@ -121,15 +144,20 @@ static Reading readCurrent() {
   Reading r;
   float vs = readAuto(CH_SHUNT, 16);
   r.value = vs / SHUNT_OHMS * cal.kI;
-  r.ol = r.value > 3.0f;
+  r.ol = r.value > MAX_AMPS;
   r.valid = true;
   return r;
 }
 
 // Resistencia con la referencia idx: R = Rref * Vx / (Vcc - Vx), corrigiendo la carga del ADS.
+static float lastVx = 0;
+// Nuestro circuito nunca lleva el nodo por encima de Vcc ni por debajo de 0: si pasa, es voltaje externo.
+static bool externalVoltage(float vx, float vcc) { return vx > vcc + 0.12f || vx < -0.08f; }
+
 static float ohmsWith(int idx, float vcc, float *ratio) {
   adsGain_t g;
   float vx = readAuto(CH_X, 8, &g);
+  lastVx = vx;
   *ratio = vx / vcc;
   if (vx >= vcc * 0.995f) return INFINITY;
   float r = cal.rRef[idx] * vx / (vcc - vx);
@@ -162,6 +190,7 @@ static Reading readOhms() {
     rx = ohmsWith(ohmRange, vcc, &ratio);
   }
   r.range = ohmRange;
+  r.ext = externalVoltage(lastVx, vcc);
   r.ol = isinf(rx) || rx > 30e6f;
   r.value = r.ol ? 0 : rx;
   r.valid = true;
@@ -173,6 +202,7 @@ static Reading readContinuity() {
   float vcc = readVcc();
   float ratio;
   float rx = ohmsWith(0, vcc, &ratio);
+  r.ext = externalVoltage(lastVx, vcc);
   r.ol = isinf(rx) || rx > 2000.0f;
   r.value = r.ol ? 0 : rx;
   r.range = 0;
@@ -184,6 +214,7 @@ static Reading readDiode() {
   Reading r;
   float vcc = readVcc();
   float vf = readAuto(CH_X, 8);
+  r.ext = externalVoltage(vf, vcc);
   r.ol = vf > vcc * 0.95f;  // abierto o Vf mayor de lo que se puede medir
   r.value = r.ol ? 0 : vf;
   r.aux = (vcc - vf) / cal.rRef[0];
@@ -291,6 +322,7 @@ void calLoad() {
   for (int i = 0; i < 4; i++) { key[1] = '0' + i; cal.rRef[i] = p.getFloat(key, cal.rRef[i]); }
   cal.kC[0] = p.getFloat("c0", cal.kC[0]);
   cal.kC[1] = p.getFloat("c1", cal.kC[1]);
+  cal.vcc = p.getFloat("vc", cal.vcc);
   p.end();
 }
 
@@ -303,6 +335,7 @@ void calSave() {
   for (int i = 0; i < 4; i++) { key[1] = '0' + i; p.putFloat(key, cal.rRef[i]); }
   p.putFloat("c0", cal.kC[0]);
   p.putFloat("c1", cal.kC[1]);
+  p.putFloat("vc", cal.vcc);
   p.end();
 }
 
