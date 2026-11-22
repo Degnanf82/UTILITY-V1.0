@@ -77,6 +77,10 @@ static String ssid;
 
 void commsBegin(const char *deviceName) {
   cmdQueue = xQueueCreate(8, sizeof(Cmd));
+  ssid = deviceName;
+#ifdef SIN_RADIO
+  return;  // compilacion de prueba: sin WiFi ni Bluetooth
+#endif
 
   // WiFi en modo punto de acceso: la app se conecta a esta red.
   ssid = deviceName;
@@ -110,6 +114,9 @@ void commsBegin(const char *deviceName) {
 }
 
 void commsLoop() {
+#ifdef SIN_RADIO
+  return;
+#endif
   if (tcpServer.hasClient()) {
     WiFiClient c = tcpServer.available();
     if (tcpClient && tcpClient.connected()) tcpClient.stop();  // un cliente a la vez
