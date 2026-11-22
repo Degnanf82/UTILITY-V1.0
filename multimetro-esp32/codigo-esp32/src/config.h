@@ -62,4 +62,4 @@
 #define BLE_RX_UUID "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  // app -> equipo (write)
 #define BLE_TX_UUID "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  // equipo -> app (notify)
 
-#define FW_VERSION "1.3"
+#define FW_VERSION "1.3.1"

@@ -430,8 +430,8 @@ static void drawScreen(bool busy) {
 // ---------------------------------------------------------------- setup / loop
 // Mensaje de arranque en la pantalla y por el puerto serie (para saber en que paso se queda).
 static void bootMsg(const char *line1, const char *line2 = "") {
-  Serial.printf("[arranque] %s %s\n", line1, line2);
-  Serial.flush();
+  // Sin Serial.flush(): con el USB conectado y sin consola abierta, esperaria para siempre.
+  if (Serial) Serial.printf("[arranque] %s %s\n", line1, line2);
   if (!oledOk) return;
   oledS.clearBuffer();
   oledS.setFont(u8g2_font_5x7_tf);

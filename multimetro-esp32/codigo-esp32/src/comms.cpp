@@ -137,7 +137,7 @@ void commsLoop() {
 void commsSend(const String &line) {
   bleSend(line);
   if (tcpClient && tcpClient.connected()) tcpClient.print(line + "\n");
-  Serial.println(line);
+  if (Serial) Serial.println(line);  // solo si hay una consola abierta en la PC
 }
 
 bool commsNextCommand(String &out) {
