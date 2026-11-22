@@ -229,6 +229,7 @@ static bool dischargeUntil(float limitMv, uint32_t timeoutMs) {
   uint32_t t0 = millis();
   while (analogReadMilliVolts(PIN_X_SENSE) > limitMv) {
     if (millis() - t0 > timeoutMs) return false;
+    feedLoopWDT();
     delay(2);
   }
   delay(5);
@@ -253,6 +254,7 @@ static float chargeTime(int idx, float vcc, uint32_t timeoutUs, bool *timeout) {
     if (now - start > timeoutUs) { *timeout = true; return 0; }
     // En cargas lentas cede la CPU (vigilancia de tareas) lejos de los umbrales.
     if (now - lastYield > 100000 && (passedA ? mv < v2 * 0.9f : mv < v1 * 0.9f)) {
+      feedLoopWDT();
       delay(1);
       lastYield = micros();
     }

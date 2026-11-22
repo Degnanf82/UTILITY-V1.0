@@ -262,6 +262,9 @@ static void handleButtons() {
 }
 
 // ---------------------------------------------------------------- pantalla
+static uint32_t frames = 0;
+static const char SPIN[] = "|/-\\";
+
 static bool i2cPresent(uint8_t addr) {
   Wire.beginTransmission(addr);
   return Wire.endTransmission() == 0;
@@ -328,7 +331,7 @@ static void drawSmall(bool busy) {
   if (millis() < warnUntil) {
     g.drawStr(0, 7, "ATENCION");
     drawWrapped(g, 16, 8, 14, warnText);
-    g.sendBuffer();
+    { char sp[2] = {SPIN[frames % 4], 0}; g.setFont(u8g2_font_5x7_tf); g.drawStr(67, 39, sp); } g.sendBuffer();
     return;
   }
   if (millis() < infoUntil) {
@@ -337,7 +340,7 @@ static void drawSmall(bool busy) {
     g.drawStr(0, 23, WIFI_PASS);
     g.drawStr(0, 31, commsIp().c_str());
     g.drawStr(0, 39, "FW " FW_VERSION);
-    g.sendBuffer();
+    { char sp[2] = {SPIN[frames % 4], 0}; g.setFont(u8g2_font_5x7_tf); g.drawStr(67, 39, sp); } g.sendBuffer();
     return;
   }
   g.drawStr(0, 7, shortLabel(mode));
@@ -363,7 +366,7 @@ static void drawSmall(bool busy) {
     String u = prefix + unitLabel(mode);
     drawUnit(g, 72 - unitWidth(g, u), 39, u);
   }
-  g.sendBuffer();
+  { char sp[2] = {SPIN[frames % 4], 0}; g.setFont(u8g2_font_5x7_tf); g.drawStr(67, 39, sp); } g.sendBuffer();
 }
 
 // OLED externa de 128x64 (opcional).
@@ -423,6 +426,7 @@ static void drawLarge(bool busy) {
 }
 
 static void drawScreen(bool busy) {
+  frames++;
   if (oledOk) drawSmall(busy);
   if (oledExtOk) drawLarge(busy);
 }
@@ -509,6 +513,7 @@ void setup() {
   infoUntil = millis() + 2500;  // muestra los datos de conexion al encender
   if (const char *t = resetText(why)) warn(String("Ultimo reinicio: ") + t);
   drawScreen(false);
+  enableLoopWDT();  // si el loop se traba mas de 5 s, la placa se reinicia y lo avisa
 }
 
 void loop() {
