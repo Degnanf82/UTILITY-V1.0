@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono: cuerpo de multimetro con pantalla y perilla -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#FFC107" android:pathData="M10,2h28a4,4 0,0 1,4 4v36a4,4 0,0 1,-4 4h-28a4,4 0,0 1,-4 -4v-36a4,4 0,0 1,4 -4z" />
+    <path android:fillColor="#1B2B1B" android:pathData="M12,7h24v13h-24z" />
+    <path android:fillColor="#7CFC9A" android:pathData="M15,10h3v7h-3zM20,10h3v7h-3zM26,10h3v7h-3zM31,10h2v7h-2z" />
+    <path android:fillColor="#263238" android:pathData="M24,33m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M23,26h2v7h-2z" />
+</vector>

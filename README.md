@@ -9,6 +9,12 @@ drivers, firmware y utilidades varias.
    para las opciones que lo requieran).
 2. Elige una opción del menú escribiendo su número.
 
+## Proyecto aparte: Multímetro ESP32 (app Android)
+
+En [`multimetro-esp32/`](multimetro-esp32/README.md) está un multímetro hecho con ESP32-C3 Super Mini,
+ADS1115 y OLED, con app Android por Bluetooth y WiFi. Incluye la APK, el firmware listo para flashear,
+los esquemas de conexión y la guía de calibración.
+
 ## Novedades (Fase 5: firmware Samsung oficial)
 
 ### Opción 14 → 8 — FIRMWARE SAMSUNG (descarga oficial)

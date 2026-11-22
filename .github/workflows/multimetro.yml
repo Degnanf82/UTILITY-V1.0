@@ -1,0 +1,49 @@
+# Compila la APK y el firmware del multimetro cuando cambia multimetro-esp32/.
+# Los archivos quedan en la pestana Actions -> ejecucion -> Artifacts.
+name: Multimetro (APK + firmware)
+
+on:
+  push:
+    paths: ["multimetro-esp32/**", ".github/workflows/multimetro.yml"]
+  pull_request:
+    paths: ["multimetro-esp32/**"]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: multimetro-esp32/android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Multimetro-apk
+          path: multimetro-esp32/android/app/build/outputs/apk/debug/app-debug.apk
+
+  firmware:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: multimetro-esp32/codigo-esp32
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install platformio
+      - run: pio run
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Multimetro-firmware
+          path: |
+            multimetro-esp32/codigo-esp32/.pio/build/esp32c3/firmware.bin
+            multimetro-esp32/codigo-esp32/.pio/build/esp32c3/bootloader.bin
+            multimetro-esp32/codigo-esp32/.pio/build/esp32c3/partitions.bin
