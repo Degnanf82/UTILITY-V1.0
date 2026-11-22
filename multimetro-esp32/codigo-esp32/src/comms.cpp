@@ -1,8 +1,6 @@
 #include "comms.h"
 #include "config.h"
-#include <BLE2902.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
+#include <NimBLEDevice.h>  // NimBLE: mucho mas liviano que la pila Bluedroid
 #include <WiFi.h>
 
 // Cola de comandos: los callbacks BLE corren en otra tarea, el loop los procesa.
@@ -19,26 +17,25 @@ static void pushCommand(const String &s) {
 }
 
 // ---------------------------------------------------------------- BLE
-static BLEServer *server = nullptr;
-static BLECharacteristic *txChar = nullptr;
+static NimBLEServer *server = nullptr;
+static NimBLECharacteristic *txChar = nullptr;
 static volatile bool bleConnected = false;
 static volatile uint16_t bleConnId = 0;
 static String bleRxBuf;
 
-class ServerCb : public BLEServerCallbacks {
-  void onConnect(BLEServer *s, esp_ble_gatts_cb_param_t *param) override {
-    bleConnId = param->connect.conn_id;
+class ServerCb : public NimBLEServerCallbacks {
+  void onConnect(NimBLEServer *s, ble_gap_conn_desc *desc) override {
+    bleConnId = desc->conn_handle;
     bleConnected = true;
   }
-  void onDisconnect(BLEServer *s) override {
+  void onDisconnect(NimBLEServer *s) override {
     bleConnected = false;
-    delay(50);
-    BLEDevice::startAdvertising();
+    NimBLEDevice::startAdvertising();
   }
 };
 
-class RxCb : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *c) override {
+class RxCb : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic *c) override {
     String v = c->getValue().c_str();
     bleRxBuf += v;
     int nl;
@@ -95,22 +92,22 @@ void commsBegin(const char *deviceName) {
   tcpServer.begin();
   tcpServer.setNoDelay(true);
 
-  // BLE
-  BLEDevice::init(deviceName);
-  BLEDevice::setMTU(247);
-  server = BLEDevice::createServer();
+  // BLE (NimBLE)
+  NimBLEDevice::init(deviceName);
+  NimBLEDevice::setMTU(247);
+  NimBLEDevice::setPower(ESP_PWR_LVL_P3);  // potencia moderada (menos picos de corriente)
+  server = NimBLEDevice::createServer();
   server->setCallbacks(new ServerCb());
-  BLEService *svc = server->createService(BLE_SERVICE_UUID);
-  txChar = svc->createCharacteristic(BLE_TX_UUID, BLECharacteristic::PROPERTY_NOTIFY);
-  txChar->addDescriptor(new BLE2902());
-  BLECharacteristic *rx = svc->createCharacteristic(
-      BLE_RX_UUID, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+  NimBLEService *svc = server->createService(BLE_SERVICE_UUID);
+  txChar = svc->createCharacteristic(BLE_TX_UUID, NIMBLE_PROPERTY::NOTIFY);
+  NimBLECharacteristic *rx = svc->createCharacteristic(BLE_RX_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR);
   rx->setCallbacks(new RxCb());
   svc->start();
-  BLEAdvertising *adv = BLEDevice::getAdvertising();
+  NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
   adv->addServiceUUID(BLE_SERVICE_UUID);
+  adv->setName(deviceName);
   adv->setScanResponse(true);
-  BLEDevice::startAdvertising();
+  NimBLEDevice::startAdvertising();
 }
 
 void commsLoop() {
