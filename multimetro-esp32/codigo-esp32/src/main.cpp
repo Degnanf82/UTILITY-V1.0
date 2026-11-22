@@ -2,8 +2,7 @@
 // Funciones: DCV, DCA, Ohm (autorango), continuidad, diodo, capacitancia, frecuencia.
 // Solo dos puntas (roja y negra); dos reles eligen el circuito segun la funcion.
 // Conexion con la app Android por Bluetooth LE y por WiFi (punto de acceso + TCP 3333).
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <U8g2lib.h>
 #include <Wire.h>
 #include <math.h>
 
@@ -11,8 +10,13 @@
 #include "config.h"
 #include "measure.h"
 
-static Adafruit_SSD1306 oled(128, 64, &Wire, -1);
-static bool oledOk = false, adsOk = false;
+// Pantalla integrada 0.42" (72x40) y OLED externa 0.96" opcional (128x64 en 0x3D).
+static U8G2_SSD1306_72X40_ER_F_HW_I2C oledS(U8G2_R0, U8X8_PIN_NONE, PIN_SCL, PIN_SDA);
+static U8G2_SSD1306_128X64_NONAME_F_HW_I2C oledL(U8G2_R0, U8X8_PIN_NONE, PIN_SCL, PIN_SDA);
+static bool oledOk = false, oledExtOk = false, adsOk = false;
+
+// Omega de 7x8 (los fuentes de U8g2 en Latin-1 no la traen).
+static const uint8_t OMEGA_7x8[] = {0x1c, 0x22, 0x41, 0x41, 0x41, 0x22, 0x14, 0x77};
 
 static Mode mode = M_DCV;
 static bool hold = false, relOn = false, beepOn = true;
@@ -75,7 +79,7 @@ static String unitLabel(Mode m) {
   switch (m) {
     case M_DCV: case M_DIODE: return "V";
     case M_DCA: return "A";
-    case M_OHM: case M_CONT: return String((char)234);  // Omega en la fuente cp437
+    case M_OHM: case M_CONT: return "~";  // se dibuja como Omega
     case M_CAP: return "F";
     default: return "Hz";
   }
@@ -257,87 +261,169 @@ static void handleButtons() {
 }
 
 // ---------------------------------------------------------------- pantalla
-static void drawScreen(bool busy) {
-  if (!oledOk) return;
-  oled.clearDisplay();
-  oled.setTextColor(SSD1306_WHITE);
-  oled.setTextSize(1);
+static bool i2cPresent(uint8_t addr) {
+  Wire.beginTransmission(addr);
+  return Wire.endTransmission() == 0;
+}
 
+// Escribe texto; '~' se dibuja como Omega. Devuelve el ancho usado.
+static int drawUnit(U8G2 &g, int x, int y, const String &t) {
+  int x0 = x;
+  for (size_t i = 0; i < t.length(); i++) {
+    if (t[i] == '~') {
+      g.drawXBM(x, y - 8, 7, 8, OMEGA_7x8);
+      x += 8;
+    } else {
+      char c[2] = {t[i], 0};
+      x += g.drawStr(x, y, c);
+    }
+  }
+  return x - x0;
+}
+
+static int unitWidth(U8G2 &g, const String &t) {
+  int w = 0;
+  for (size_t i = 0; i < t.length(); i++) {
+    if (t[i] == '~') w += 8;
+    else { char c[2] = {t[i], 0}; w += g.getStrWidth(c); }
+  }
+  return w;
+}
+
+// Texto con salto de linea por palabras (para avisos).
+static void drawWrapped(U8G2 &g, int y, int lineH, int maxChars, const String &txt) {
+  String line, word;
+  String t = txt + " ";
+  for (size_t i = 0; i < t.length(); i++) {
+    if (t[i] != ' ') { word += t[i]; continue; }
+    if (line.length() + word.length() + 1 > (size_t)maxChars && line.length()) {
+      g.drawStr(0, y, line.c_str()); y += lineH; line = "";
+    }
+    line += (line.length() ? " " : "") + word;
+    word = "";
+  }
+  if (line.length()) g.drawStr(0, y, line.c_str());
+}
+
+static const char *shortLabel(Mode m) {
+  static const char *L[M_COUNT] = {"DC V", "mA", "OHM", "CONT", "DIODO", "CAP", "Hz"};
+  return L[m];
+}
+
+static String flagsText() {
+  String f;
+  if (hold) f += "H";
+  if (relOn) f += "R";
+  if (commsBleConnected()) f += "B";
+  if (commsWifiConnected()) f += "W";
+  return f;
+}
+
+// Pantalla integrada de 72x40.
+static void drawSmall(bool busy) {
+  U8G2 &g = oledS;
+  g.clearBuffer();
+  g.setFont(u8g2_font_5x7_tf);
   if (millis() < warnUntil) {
-    oled.setCursor(0, 0);
-    oled.setTextSize(2);
-    oled.println("ATENCION");
-    oled.setTextSize(1);
-    oled.println();
-    oled.println(warnText);
-    oled.display();
+    g.drawStr(0, 7, "ATENCION");
+    drawWrapped(g, 16, 8, 14, warnText);
+    g.sendBuffer();
     return;
   }
   if (millis() < infoUntil) {
-    oled.setCursor(0, 0);
-    oled.println("CONEXION");
-    oled.println("BT/WiFi: " + devName);
-    oled.println("Clave: " WIFI_PASS);
-    oled.println("IP: " + commsIp());
-    oled.println("Puerto: " + String(TCP_PORT));
-    oled.println("FW " FW_VERSION);
-    oled.display();
+    g.drawStr(0, 7, devName.c_str() + 11);  // "XXXX" de Multimetro-XXXX
+    g.drawStr(0, 15, "Clave:");
+    g.drawStr(0, 23, WIFI_PASS);
+    g.drawStr(0, 31, commsIp().c_str());
+    g.drawStr(0, 39, "FW " FW_VERSION);
+    g.sendBuffer();
     return;
   }
-
-  oled.setCursor(0, 0);
-  oled.print(modeLabel(mode));
-  String flags;
-  if (hold) flags += "H ";
-  if (relOn) flags += "R ";
-  if (commsBleConnected()) flags += "B";
-  if (commsWifiConnected()) flags += "W";
-  oled.setCursor(128 - flags.length() * 6, 0);
-  oled.print(flags);
-  oled.drawFastHLine(0, 10, 128, SSD1306_WHITE);
+  g.drawStr(0, 7, shortLabel(mode));
+  String f = flagsText();
+  g.drawStr(72 - g.getStrWidth(f.c_str()), 7, f.c_str());
 
   String big, prefix;
   if (!adsOk && mode != M_FREQ && mode != M_CAP) {
-    oled.setTextSize(2);
-    oled.setCursor(0, 22);
-    oled.print("SIN ADS");
+    g.drawStr(0, 24, "SIN ADS1115");
   } else if (busy && !shownValid) {
-    oled.setTextSize(2);
-    oled.setCursor(0, 22);
-    oled.print("Midiendo");
+    g.drawStr(0, 24, "Midiendo...");
   } else if (!shownValid) {
-    oled.setTextSize(3);
-    oled.setCursor(0, 18);
-    oled.print("----");
+    g.setFont(u8g2_font_logisoso16_tr);
+    g.drawStr(0, 28, "----");
   } else if (shownOl) {
-    oled.setTextSize(3);
-    oled.setCursor(0, 18);
-    oled.print(mode == M_CONT || mode == M_DIODE ? "OPEN" : "OL");
+    g.setFont(u8g2_font_logisoso16_tr);
+    g.drawStr(0, 28, mode == M_CONT || mode == M_DIODE ? "OPEN" : "OL");
   } else {
     formatSI(shown, big, prefix);
-    oled.setTextSize(3);
-    oled.setCursor(0, 18);
-    oled.print(big);
-    oled.setTextSize(2);
+    g.setFont(u8g2_font_logisoso16_tr);
+    g.drawStr(72 - g.getStrWidth(big.c_str()), 28, big.c_str());
+    g.setFont(u8g2_font_6x10_tf);
     String u = prefix + unitLabel(mode);
-    oled.setCursor(128 - u.length() * 12, 42);
-    oled.print(u);
+    drawUnit(g, 72 - unitWidth(g, u), 39, u);
   }
+  g.sendBuffer();
+}
 
-  oled.setTextSize(1);
-  oled.setCursor(0, 56);
+// OLED externa de 128x64 (opcional).
+static void drawLarge(bool busy) {
+  U8G2 &g = oledL;
+  g.clearBuffer();
+  g.setFont(u8g2_font_6x10_tf);
+  if (millis() < warnUntil) {
+    g.drawStr(0, 10, "ATENCION");
+    drawWrapped(g, 24, 11, 21, warnText);
+    g.sendBuffer();
+    return;
+  }
+  if (millis() < infoUntil) {
+    g.drawStr(0, 10, ("BT/WiFi: " + devName).c_str());
+    g.drawStr(0, 22, "Clave: " WIFI_PASS);
+    g.drawStr(0, 34, ("IP: " + commsIp()).c_str());
+    g.drawStr(0, 46, ("Puerto: " + String(TCP_PORT)).c_str());
+    g.drawStr(0, 58, "FW " FW_VERSION);
+    g.sendBuffer();
+    return;
+  }
+  static const char *L[M_COUNT] = {"DC V", "CORRIENTE", "OHM", "CONTINUIDAD", "DIODO", "CAPACITOR", "FRECUENCIA"};
+  g.drawStr(0, 9, L[mode]);
+  String f = flagsText();
+  g.drawStr(128 - g.getStrWidth(f.c_str()), 9, f.c_str());
+  g.drawHLine(0, 12, 128);
+
+  String big, prefix;
+  if (!adsOk && mode != M_FREQ && mode != M_CAP) {
+    g.drawStr(0, 36, "SIN ADS1115");
+  } else if (busy && !shownValid) {
+    g.drawStr(0, 36, "Midiendo...");
+  } else if (!shownValid || shownOl) {
+    g.setFont(u8g2_font_logisoso24_tr);
+    g.drawStr(0, 44, !shownValid ? "----" : (mode == M_CONT || mode == M_DIODE ? "OPEN" : "OL"));
+  } else {
+    formatSI(shown, big, prefix);
+    g.setFont(u8g2_font_logisoso24_tr);
+    g.drawStr(96 - g.getStrWidth(big.c_str()), 44, big.c_str());
+    g.setFont(u8g2_font_9x15_tf);
+    drawUnit(g, 100, 44, prefix + unitLabel(mode));
+  }
+  g.setFont(u8g2_font_5x7_tf);
   if (mode == M_DIODE && shownValid && !shownOl) {
     formatSI(last.aux, big, prefix);
-    oled.print("If " + big + prefix + "A");
+    g.drawStr(0, 63, ("If " + big + prefix + "A").c_str());
   } else if (vCount > 1) {
     String a, pa, b, pb;
     formatSI(vMin, a, pa);
     formatSI(vMax, b, pb);
-    oled.print("^" + b + pb + " v" + a + pa);
-  } else if (busy) {
-    oled.print("...");
+    String t = "MIN " + a + pa + "  MAX " + b + pb;
+    t.replace("~", "");
+    g.drawStr(0, 63, t.c_str());
   }
-  oled.display();
+  g.sendBuffer();
+}
+
+static void drawScreen(bool busy) {
+  if (oledOk) drawSmall(busy);
+  if (oledExtOk) drawLarge(busy);
 }
 
 // ---------------------------------------------------------------- setup / loop
@@ -353,8 +439,15 @@ void setup() {
 
   Wire.begin(PIN_SDA, PIN_SCL);
   Wire.setClock(400000);
-  oledOk = oled.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-  if (oledOk) oled.cp437(true);
+  if (i2cPresent(OLED_ADDR)) {
+    oledS.setI2CAddress(OLED_ADDR << 1);
+    oledOk = oledS.begin();
+  }
+  if (i2cPresent(OLED_EXT_ADDR)) {
+    oledL.setI2CAddress(OLED_EXT_ADDR << 1);
+    oledExtOk = oledL.begin();
+  }
+  Wire.setClock(400000);  // U8g2 puede cambiar el reloj al iniciar
 
   calLoad();
   adsOk = measureBegin();

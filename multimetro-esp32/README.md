@@ -1,4 +1,4 @@
-# Multímetro ESP32-C3 + ADS1115 + OLED, con app Android (Bluetooth y WiFi)
+# Multímetro ESP32-C3 (OLED 0.42" integrada) + ADS1115, con app Android (Bluetooth y WiFi)
 
 Multímetro de banco para electrónica de **baja tensión DC**, con **solo dos puntas** (roja y
 negra), como uno comercial. La función se elige con el botón **MODO** o desde la app. Dos relés
@@ -26,9 +26,16 @@ llevan la punta roja al circuito correcto. La lectura sale en la pantalla OLED y
 ```
 multimetro-esp32/
 ├── diagrama.html        ← GUÍA DE ARMADO con dibujos (ábrela en el navegador)
+├── docs/
+│   ├── esquema-electrico.pdf / .png     ← esquema completo (hoja A3)
+│   ├── diagrama-de-bloques.png
+│   ├── montaje-placa-perforada.png
+│   └── app-*.png                        ← pantallas de la app
+├── imagenes/            ← un dibujo por paso de armado (PNG grande)
+├── herramientas/        ← scripts que generan el esquema, los bloques y el montaje
 ├── binarios/
-│   ├── Multimetro-v1.1.apk                      ← instalar en el teléfono
-│   └── multimetro-firmware-v1.1-completo.bin    ← firmware completo (dirección 0x0)
+│   ├── Multimetro-v1.2.apk                      ← instalar en el teléfono
+│   └── multimetro-firmware-v1.2-completo.bin    ← firmware completo (dirección 0x0)
 ├── codigo-esp32/    firmware (PlatformIO / Arduino)
 └── android/         código de la app (Kotlin, sin librerías externas)
 ```
@@ -38,9 +45,9 @@ armado y la lista de materiales. Este README solo resume.
 
 ## Cómo funciona con dos puntas
 
-| Función | Relé K1 (GPIO 5) | Relé K2 (GPIO 6) | La punta roja va a |
+| Función | Relé K1 (GPIO 8) | Relé K2 (GPIO 10) | La punta roja va a |
 |---|---|---|---|
-| Voltaje y frecuencia | apagado | apagado | divisor 1 MΩ / 100 kΩ → A0, y 100 kΩ → GPIO 20 |
+| Voltaje y frecuencia | apagado | apagado | divisor 1 MΩ / 100 kΩ → A0, y 100 kΩ → GPIO 21 (TX) |
 | Ω, continuidad, diodo, capacitor | **encendido** | apagado | PTC → nodo X (A1 y GPIO 4) |
 | Corriente | apagado | **encendido** | fusible 315 mA → shunt 1 Ω → A2 |
 
@@ -65,18 +72,25 @@ por 10 kΩ y REL por 33 kΩ.
 | HOLD | congela la lectura | borra MIN/MAX |
 | REL | relativo (pone la lectura actual en cero) | muestra los datos de WiFi/BT 5 s |
 
-## Mapa de pines del ESP32-C3
+## Placa y mapa de pines
+
+Placa: **ESP32-C3 con pantalla OLED 0.42" integrada** (72×40, SSD1306). La pantalla ya va conectada por dentro
+al I2C en GPIO 5 (SDA) y GPIO 6 (SCL), en la dirección 0x3C. El ADS1115 se conecta a esos mismos pines.
+Si además quieres usar la OLED 0.96" externa, cámbiala a la dirección **0x3D** (mueve la resistencia de su parte
+trasera de «0x78» a «0x7A»). El firmware la detecta sola.
+
+Vista desde arriba con el USB-C abajo. Columna izquierda: 3, 4, 5, 6, 7, 8, 9, 10. Columna derecha: 0, 1, 2, TX, RX, V3, GD, V5.
 
 | Pin | Conectar a |
 |---|---|
-| 3.3 / G / 5V | alimentación de módulos / GND común / bobinas de relés y buzzer |
-| 8 / 9 | SDA / SCL (ADS1115 0x48 y OLED 0x3C) |
-| 5 / 6 | transistor del relé K1 (Ω) / K2 (mA) |
-| 10 / 3 / 1 / 0 | referencias de 1 k / 10 k / 100 k / 1 M hacia el nodo X |
+| V3 / GD / V5 | 3.3 V del ADS1115 y botones / GND común / bobinas de relés y buzzer |
+| 5 / 6 | SDA / SCL del ADS1115 (0x48); pantalla integrada en 0x3C |
+| 8 / 10 | transistor del relé K1 (Ω) / K2 (mA). El LED azul de GPIO 8 se apaga con K1 encendido |
+| 0 / 1 / 3 / 9 | referencias de 1 k / 10 k / 100 k / 1 M hacia el nodo X |
 | 7 | 220 Ω al nodo X (descarga de capacitores) |
 | 4 | 1 kΩ al nodo X (ADC rápido para capacitancia) |
-| 20 | entrada de frecuencia (100 kΩ desde K1 NC) |
-| 21 | transistor del buzzer |
+| TX (21) | entrada de frecuencia (100 kΩ desde K1 NC) |
+| RX (20) | transistor del buzzer |
 | 2 | libre: no conectar (es pin de arranque) |
 
 | ADS1115 | Señal |
@@ -93,7 +107,7 @@ por 10 kΩ y REL por 33 kΩ.
 **Opción A, binario listo:**
 1. En la PC abre <https://espressif.github.io/esptool-js/> en Chrome o Edge.
 2. Conecta la placa por USB-C. Si no aparece, mantén **BOOT**, pulsa **RST** y suelta BOOT.
-3. **Connect**, dirección **0x0**, elige `binarios/multimetro-firmware-v1.1-completo.bin` y pulsa **Program**.
+3. **Connect**, dirección **0x0**, elige `binarios/multimetro-firmware-v1.2-completo.bin` y pulsa **Program**.
 4. Pulsa **RST**. La OLED muestra el nombre `Multimetro-XXXX` y la clave WiFi.
 
 **Opción B, compilar con PlatformIO:**
@@ -105,7 +119,7 @@ pio device monitor       # lecturas en JSON (115200)
 
 ## 2. Instalar la app
 
-Copia `binarios/Multimetro-v1.1.apk` al teléfono e instálala (Android 7 o superior). Tendrás que permitir
+Copia `binarios/Multimetro-v1.2.apk` al teléfono e instálala (Android 7 o superior). Tendrás que permitir
 la instalación de *orígenes desconocidos*. Si la APK viene de otra máquina (por ejemplo, de GitHub Actions),
 desinstala antes la anterior, porque cambia la firma de depuración.
 
@@ -134,6 +148,14 @@ Si mides el riel de 3.3 V con otro multímetro, puedes ajustarlo con el comando 
 
 ---
 
+## Capturas de la app
+
+`docs/app-*.png` se generan con la app real (Robolectric, sin emulador) y datos de ejemplo:
+```bash
+cd multimetro-esp32/android
+./gradlew testDebugUnitTest     # deja las imágenes en app/build/capturas/
+```
+
 ## Protocolo
 
 Son líneas de texto terminadas en `\n`, por BLE (servicio Nordic UART `6e400001-…`, RX `…0002`,
@@ -154,4 +176,4 @@ Comandos: `MODE DCV|DCA|OHM|CONT|DIODE|CAP|FREQ`, `HOLD [0|1]`, `REL [0|1]`, `RE
 - La referencia de 3.3 V es el regulador de la placa: calíbralo si quieres más precisión en Ω.
 - En voltaje, por encima de ~3.5 V la toma de frecuencia (100 kΩ) carga un poco los puntos de alta impedancia.
 - No hay medición de AC ni de hFE.
-- Algunas OLED de 0.96" traen controlador SH1106 en vez de SSD1306. Si la imagen se ve corrida, avisa y se cambia la librería.
+- La pantalla integrada es pequeña (72×40): muestra función, valor y unidad. El detalle (MIN/MAX, gráfica) está en la app o en la OLED 0.96" opcional.

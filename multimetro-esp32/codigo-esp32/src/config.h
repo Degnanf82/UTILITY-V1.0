@@ -1,5 +1,6 @@
 // Configuracion de pines y constantes del multimetro.
-// Placa: ESP32-C3 Super Mini. Pines libres: 0-10, 20, 21.
+// Placa: ESP32-C3 con OLED 0.42" integrada (72x40, SSD1306, I2C en GPIO 5/6).
+// Pines: izquierda 3,4,5,6,7,8,9,10 · derecha 0,1,2,TX(21),RX(20),3V3,GND,5V.
 //
 // Solo dos puntas: ROJA (jack VΩmA) y NEGRA (COM = GND).
 // Dos reles SPDT eligen a que circuito llega la punta roja:
@@ -9,28 +10,29 @@
 #pragma once
 #include <Arduino.h>
 
-// ---------- Bus I2C (ADS1115 0x48 + OLED 0x3C) ----------
-#define PIN_SDA 8
-#define PIN_SCL 9
+// ---------- Bus I2C (fijo en la placa: pantalla integrada + ADS1115) ----------
+#define PIN_SDA 5
+#define PIN_SCL 6
 #define ADS_ADDR 0x48
-#define OLED_ADDR 0x3C
+#define OLED_ADDR 0x3C      // pantalla integrada 0.42" (72x40)
+#define OLED_EXT_ADDR 0x3D  // OLED externa 0.96" opcional (cambiarla a 0x3D)
 
 // ---------- Reles (via transistor NPN, activos en alto) ----------
-#define PIN_RELAY_OHM 5  // K1: punta roja -> nodo X
-#define PIN_RELAY_MA 6   // K2: punta roja -> shunt de corriente
+#define PIN_RELAY_OHM 8  // K1: punta roja -> nodo X (comparte el LED azul de la placa)
+#define PIN_RELAY_MA 10  // K2: punta roja -> shunt de corriente
 
 // ---------- Nodo "X" (resistencia / diodo / capacitor / continuidad) ----------
-#define PIN_REF_1K 10    // 1 kOhm   -> nodo X
-#define PIN_REF_10K 3    // 10 kOhm  -> nodo X
-#define PIN_REF_100K 1   // 100 kOhm -> nodo X
-#define PIN_REF_1M 0     // 1 MOhm   -> nodo X
+#define PIN_REF_1K 0     // 1 kOhm   -> nodo X
+#define PIN_REF_10K 1    // 10 kOhm  -> nodo X
+#define PIN_REF_100K 3   // 100 kOhm -> nodo X
+#define PIN_REF_1M 9     // 1 MOhm   -> nodo X (GPIO 9 = BOOT: el 1M no afecta el arranque)
 #define PIN_DISCHARGE 7  // 220 Ohm  -> nodo X (descarga de capacitores)
 #define PIN_X_SENSE 4    // ADC del ESP32 al nodo X (por 1k) para tiempos rapidos
 
 // ---------- Otros ----------
-#define PIN_FREQ 20      // frecuencia: 100k desde el lado "V" de K1 + diodos de proteccion
-#define PIN_BUZZER 21    // buzzer activo via transistor NPN
-// GPIO 2 queda libre (es pin de arranque: no conectarle nada que lo baje).
+#define PIN_FREQ 21      // TX: frecuencia, 100k desde el lado "V" de K1 + diodos de proteccion
+#define PIN_BUZZER 20    // RX: buzzer activo via transistor NPN
+// GPIO 2 queda libre (es pin de arranque: no conectarle nada).
 
 // ---------- Canales del ADS1115 ----------
 #define CH_VOLT 0        // A0: divisor 1M / 100k
@@ -60,4 +62,4 @@
 #define BLE_RX_UUID "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  // app -> equipo (write)
 #define BLE_TX_UUID "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  // equipo -> app (notify)
 
-#define FW_VERSION "1.1"
+#define FW_VERSION "1.2"

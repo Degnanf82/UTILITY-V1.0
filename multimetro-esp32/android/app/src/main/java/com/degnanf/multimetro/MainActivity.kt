@@ -45,12 +45,12 @@ class MainActivity : Activity(), LinkListener {
 
     private val modes = listOf(
         ModeInfo("DCV", "Voltaje DC"),
-        ModeInfo("DCA", "Corriente (mA)"),
+        ModeInfo("FREQ", "Frecuencia"),
+        ModeInfo("DCA", "Corriente mA"),
         ModeInfo("OHM", "Resistencia"),
         ModeInfo("CONT", "Continuidad"),
         ModeInfo("DIODE", "Diodo"),
         ModeInfo("CAP", "Capacitor"),
-        ModeInfo("FREQ", "Frecuencia"),
     )
 
     private var link: MeterLink? = null
@@ -145,8 +145,9 @@ class MainActivity : Activity(), LinkListener {
         val modeBtns = modes.map { m ->
             button(m.label) { selectMode(m.code) }.also { modeButtons[m.code] = it }
         }
-        root.addView(row(*modeBtns.subList(0, 4).toTypedArray()))
-        root.addView(row(*modeBtns.subList(4, 7).toTypedArray()))
+        root.addView(row(*modeBtns.subList(0, 3).toTypedArray()))
+        root.addView(row(*modeBtns.subList(3, 5).toTypedArray()))
+        root.addView(row(*modeBtns.subList(5, 7).toTypedArray()))
 
         // Acciones
         btnHold = button("HOLD") { sendCmd("HOLD") }
@@ -200,11 +201,14 @@ class MainActivity : Activity(), LinkListener {
         text = label
         isAllCaps = false
         textSize = 13f
+        maxLines = 1
         setOnClickListener { onClick() }
     }
 
     private fun row(vararg views: View) = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
+        isBaselineAligned = false
+        gravity = Gravity.CENTER_VERTICAL
         views.forEach { addView(it, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)) }
     }
 
