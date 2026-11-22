@@ -3,6 +3,7 @@
 // Solo dos puntas (roja y negra); dos reles eligen el circuito segun la funcion.
 // Conexion con la app Android por Bluetooth LE y por WiFi (punto de acceso + TCP 3333).
 #include <U8g2lib.h>
+#include <esp_system.h>
 #include <Wire.h>
 #include <math.h>
 
@@ -427,9 +428,32 @@ static void drawScreen(bool busy) {
 }
 
 // ---------------------------------------------------------------- setup / loop
+// Mensaje de arranque en la pantalla y por el puerto serie (para saber en que paso se queda).
+static void bootMsg(const char *line1, const char *line2 = "") {
+  Serial.printf("[arranque] %s %s\n", line1, line2);
+  Serial.flush();
+  if (!oledOk) return;
+  oledS.clearBuffer();
+  oledS.setFont(u8g2_font_5x7_tf);
+  oledS.drawStr(0, 8, "MULTIMETRO " FW_VERSION);
+  oledS.drawStr(0, 22, line1);
+  oledS.drawStr(0, 32, line2);
+  oledS.sendBuffer();
+}
+
+static const char *resetText(esp_reset_reason_t r) {
+  switch (r) {
+    case ESP_RST_BROWNOUT: return "voltaje bajo";
+    case ESP_RST_PANIC: return "error (panic)";
+    case ESP_RST_INT_WDT: case ESP_RST_TASK_WDT: case ESP_RST_WDT: return "watchdog";
+    default: return nullptr;
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.setTimeout(50);
+  Serial.setTxTimeoutMs(0);  // sin monitor abierto, no esperar al escribir por USB
   pinMode(PIN_RELAY_OHM, OUTPUT);  // reles apagados lo antes posible
   digitalWrite(PIN_RELAY_OHM, LOW);
   pinMode(PIN_RELAY_MA, OUTPUT);
@@ -438,11 +462,13 @@ void setup() {
   digitalWrite(PIN_BUZZER, LOW);
 
   Wire.begin(PIN_SDA, PIN_SCL);
-  Wire.setClock(400000);
-  if (i2cPresent(OLED_ADDR)) {
-    oledS.setI2CAddress(OLED_ADDR << 1);
-    oledOk = oledS.begin();
-  }
+  Wire.setClock(100000);
+  // La pantalla integrada siempre esta: se inicia sin depender de la deteccion.
+  oledS.setI2CAddress(OLED_ADDR << 1);
+  oledOk = oledS.begin();
+  oledS.setContrast(255);
+  esp_reset_reason_t why = esp_reset_reason();
+  bootMsg("Iniciando...");
   if (i2cPresent(OLED_EXT_ADDR)) {
     oledL.setI2CAddress(OLED_EXT_ADDR << 1);
     oledExtOk = oledL.begin();
@@ -450,17 +476,21 @@ void setup() {
   Wire.setClock(400000);  // U8g2 puede cambiar el reloj al iniciar
 
   calLoad();
+  bootMsg("ADC ADS1115...");
   adsOk = measureBegin();
+  bootMsg(adsOk ? "ADS1115: OK" : "ADS1115: no", "WiFi + Bluetooth...");
 
   uint64_t mac = ESP.getEfuseMac();  // bytes de la MAC en orden inverso
   char name[24];
   snprintf(name, sizeof(name), "Multimetro-%02X%02X", (uint8_t)(mac >> 32), (uint8_t)(mac >> 40));
   devName = name;
   commsBegin(name);
+  bootMsg("WiFi + BT: OK");
 
   resetStats();
   setMode(M_DCV);
   infoUntil = millis() + 2500;  // muestra los datos de conexion al encender
+  if (const char *t = resetText(why)) warn(String("Ultimo reinicio: ") + t);
   drawScreen(false);
 }
 

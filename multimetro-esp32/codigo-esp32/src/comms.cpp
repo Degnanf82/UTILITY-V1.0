@@ -80,9 +80,14 @@ void commsBegin(const char *deviceName) {
 
   // WiFi en modo punto de acceso: la app se conecta a esta red.
   ssid = deviceName;
+  // Las SuperMini se reinician (voltaje bajo) o no conectan con la potencia maxima:
+  // se baja ANTES de encender el punto de acceso.
   WiFi.mode(WIFI_AP);
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+  delay(50);
   WiFi.softAP(ssid.c_str(), WIFI_PASS);
-  WiFi.setTxPower(WIFI_POWER_8_5dBm);  // las Super Mini fallan con potencia alta
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+  delay(100);
   tcpServer.begin();
   tcpServer.setNoDelay(true);
 
