@@ -7,6 +7,14 @@ Formato por versiones. El menú principal y el submenú **Herramientas ADB/FASTB
 
 ## V1.2 — 2026-11-23
 
+### Códigos de prueba / diagnóstico por marca
+- Opción **14 → C**: pantalla de referencia con los códigos de diagnóstico de
+  fábrica (que se marcan en el teléfono) por marca: Universal, Samsung, Xiaomi/
+  Redmi/POCO, Motorola, Huawei/Honor, Oppo/Realme/OnePlus, Vivo/iQOO, MediaTek
+  (Tecno/Infinix/itel) y LG. Incluye IMEI (`*#06#`), menús de test de hardware
+  (ej. Samsung `*#0*#`), info de firmware, etc. Los códigos que **borran datos**
+  están marcados con aviso. Se aclara que varían por modelo.
+
 ### Diagnóstico de batería
 - Opción **14 → B**: lee `dumpsys battery` y, si el equipo lo expone, la
   capacidad de diseño vs actual y los ciclos (`/sys/class/power_supply`).

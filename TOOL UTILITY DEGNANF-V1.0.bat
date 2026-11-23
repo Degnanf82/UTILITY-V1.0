@@ -562,6 +562,8 @@ call :c 0E "   [9] "&call :c 06 "CUENTA / FRP - PROCESO OFICIAL (guia)"
 echo.
 call :c 0E "   [B] "&call :c 06 "DIAGNOSTICO DE BATERIA (salud / ciclos / temp)"
 echo.
+call :c 0E "   [C] "&call :c 06 "CODIGOS DE PRUEBA / DIAGNOSTICO (por marca)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -577,6 +579,7 @@ if "%t%"=="7" goto brickmenu
 if "%t%"=="8" goto samfwmenu
 if "%t%"=="9" goto frpoficial
 if /I "%t%"=="B" goto battdiag
+if /I "%t%"=="C" goto codesmenu
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -1467,6 +1470,181 @@ call :c 0A "  GUARDADO EN: "&echo %RPT%
 echo.
 pause
 goto toolsadb
+
+:codesmenu
+cls
+echo.
+call :c 05 "     CODIGOS DE PRUEBA / DIAGNOSTICO  (se marcan en el telefono)"
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "UNIVERSAL (casi todos)"
+echo.
+call :c 0E "   [2] "&call :c 06 "SAMSUNG"
+echo.
+call :c 0E "   [3] "&call :c 06 "XIAOMI / REDMI / POCO"
+echo.
+call :c 0E "   [4] "&call :c 06 "MOTOROLA"
+echo.
+call :c 0E "   [5] "&call :c 06 "HUAWEI / HONOR"
+echo.
+call :c 0E "   [6] "&call :c 06 "OPPO / REALME / ONEPLUS"
+echo.
+call :c 0E "   [7] "&call :c 06 "VIVO / iQOO"
+echo.
+call :c 0E "   [8] "&call :c 06 "MEDIATEK (Tecno/Infinix/itel y genericos)"
+echo.
+call :c 0E "   [9] "&call :c 06 "LG"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+call :c 0E "   Los codigos varian por modelo y version; algunos pueden no funcionar."
+echo.
+echo.
+set "cc="
+set /p "cc=  ╚═════►  SELECCIONE UNA MARCA: "
+if "%cc%"=="1" goto codesuni
+if "%cc%"=="2" goto codessam
+if "%cc%"=="3" goto codesxia
+if "%cc%"=="4" goto codesmoto
+if "%cc%"=="5" goto codeshua
+if "%cc%"=="6" goto codesoppo
+if "%cc%"=="7" goto codesvivo
+if "%cc%"=="8" goto codesmtk
+if "%cc%"=="9" goto codeslg
+if "%cc%"=="0" goto toolsadb
+goto codesmenu
+
+:codesuni
+cls
+call :c 05 "   CODIGOS UNIVERSALES (la mayoria de Android)"
+echo.
+echo.
+call :prc "*#06#" "IMEI / numero(s) de serie"
+call :prc "*#*#4636#*#*" "Info de telefono, bateria, uso y WiFi"
+call :prc "*#*#7780#*#*" "Reset de fabrica - BORRA DATOS (conserva apps del sistema)"
+call :prc "*2767*3855#" "Wipe total de fabrica - BORRA TODO, sin confirmar"
+echo.
+call :c 0C "  OJO: los dos ultimos BORRAN datos. No los marques por error."
+echo.
+pause
+goto codesmenu
+
+:codessam
+cls
+call :c 05 "   CODIGOS SAMSUNG"
+echo.
+echo.
+call :prc "*#0*#" "Test de hardware (pantalla, sensores, camara, altavoz)"
+call :prc "*#06#" "IMEI / serie"
+call :prc "*#1234#" "Version de firmware (AP / CP / CSC)"
+call :prc "*#12580*369#" "Info de hardware y software"
+call :prc "*#0228#" "Estado de bateria (ADC, voltaje)"
+call :prc "*#0011#" "Service mode (red / RF)"
+call :prc "*#34971539#" "Info de camara"
+call :prc "*#0808#" "Ajustes de puerto USB"
+echo.
+pause
+goto codesmenu
+
+:codesxia
+cls
+call :c 05 "   CODIGOS XIAOMI / REDMI / POCO"
+echo.
+echo.
+call :prc "*#06#" "IMEI / serie"
+call :prc "*#*#6484#*#*" "CIT - Test de hardware"
+call :prc "*#*#64663#*#*" "CIT - Test de hardware (alternativo)"
+call :prc "*#*#4636#*#*" "Info y uso"
+call :prc "*#*#284#*#*" "Genera un bug report (log)"
+echo.
+pause
+goto codesmenu
+
+:codesmoto
+cls
+call :c 05 "   CODIGOS MOTOROLA"
+echo.
+echo.
+call :prc "*#06#" "IMEI / serie"
+call :prc "*#*#4636#*#*" "Info de telefono"
+call :prc "*#*#2486#*#*" "Modo ingenieria / test"
+call :prc "*#*#372733#*#*" "Test de servicio (segun modelo)"
+echo.
+pause
+goto codesmenu
+
+:codeshua
+cls
+call :c 05 "   CODIGOS HUAWEI / HONOR"
+echo.
+echo.
+call :prc "*#06#" "IMEI / serie"
+call :prc "*#*#2846579#*#*" "Menu de proyecto / test de hardware"
+call :prc "*#*#4636#*#*" "Info y uso"
+call :prc "*#*#14789632#*#*" "Info de proyecto (segun modelo)"
+echo.
+pause
+goto codesmenu
+
+:codesoppo
+cls
+call :c 05 "   CODIGOS OPPO / REALME / ONEPLUS"
+echo.
+echo.
+call :prc "*#06#" "IMEI / serie"
+call :prc "*#808#" "Modo ingenieria / test (Oppo/Realme/OnePlus)"
+call :prc "*#899#" "Test de hardware (Oppo)"
+call :prc "*#36446337#" "ENGMODE (OnePlus)"
+call :prc "*#*#4636#*#*" "Info y uso"
+echo.
+pause
+goto codesmenu
+
+:codesvivo
+cls
+call :c 05 "   CODIGOS VIVO / iQOO"
+echo.
+echo.
+call :prc "*#06#" "IMEI / serie"
+call :prc "*#558#" "Modo de prueba / hardware"
+call :prc "*#*#4636#*#*" "Info y uso"
+call :prc "*#2222#" "Test (segun modelo)"
+echo.
+pause
+goto codesmenu
+
+:codesmtk
+cls
+call :c 05 "   CODIGOS MEDIATEK (Tecno / Infinix / itel y genericos MTK)"
+echo.
+echo.
+call :prc "*#06#" "IMEI / serie"
+call :prc "*#*#3646633#*#*" "EngineerMode (modo ingenieria MTK)"
+call :prc "*#*#54298#*#*" "EngineerMode (alternativo)"
+call :prc "*#*#4636#*#*" "Info y uso"
+echo.
+pause
+goto codesmenu
+
+:codeslg
+cls
+call :c 05 "   CODIGOS LG"
+echo.
+echo.
+call :prc "*#06#" "IMEI / serie"
+call :prc "3845#*MODELO#" "Menu de servicio oculto (pon el modelo, ej: 3845#*930#)"
+call :prc "*#546368#*MODELO#" "Menu oculto (segun modelo)"
+call :prc "277634#*#" "Menu de test (segun modelo)"
+echo.
+pause
+goto codesmenu
+
+:prc
+call :c 0A "   %~1"
+call :c 0E "   = %~2"
+echo.
+exit /b
 
 :nodevadb
 echo.
