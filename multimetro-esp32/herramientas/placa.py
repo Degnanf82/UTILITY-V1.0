@@ -13,8 +13,8 @@ pads = []      # (c, r, net)
 draw = []      # elementos de componentes
 labels = []
 
-def pad(c, r, net):
-    pads.append((c, r, net))
+def pad(c, r, net, desc=""):
+    pads.append((c, r, net, desc))
 
 def text(x, y, t, size=12, weight=600, color="#17201c", anchor="middle", rot=0):
     tr = f' transform="rotate({rot} {x} {y})"' if rot else ""
@@ -23,7 +23,12 @@ def text(x, y, t, size=12, weight=600, color="#17201c", anchor="middle", rot=0):
 BANDS = {"k": "#1a1a1a", "n": "#7b4a1e", "r": "#c62828", "o": "#ef6c00", "y": "#f2cc1b", "g": "#2e7d32", "u": "#c9a227"}
 
 def resistor(c1, r1, c2, r2, n1, n2, bands, label, big=False, side="right"):
-    pad(c1, r1, n1); pad(c2, r2, n2)
+    nm = (label or "R").split()[0]
+    if c1 == c2:
+        d1, d2 = ("arriba", "abajo") if r1 < r2 else ("abajo", "arriba")
+    else:
+        d1, d2 = ("izq.", "der.") if c1 < c2 else ("der.", "izq.")
+    pad(c1, r1, n1, f"{nm} {d1}"); pad(c2, r2, n2, f"{nm} {d2}")
     x1, y1 = xy(c1, r1); x2, y2 = xy(c2, r2)
     draw.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#9aa0a6" stroke-width="2.5"/>')
     cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
@@ -49,7 +54,8 @@ def resistor(c1, r1, c2, r2, n1, n2, bands, label, big=False, side="right"):
         text(cx + 14, cy + 4, label, 11, anchor="start")
 
 def diode(ca, ra, ck, rk, na, nk, label, glass=False):
-    pad(ca, ra, na); pad(ck, rk, nk)
+    nm = (label or "D").split()[0]
+    pad(ca, ra, na, f"{nm} ánodo"); pad(ck, rk, nk, f"{nm} cátodo (raya)")
     x1, y1 = xy(ca, ra); x2, y2 = xy(ck, rk)
     draw.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#9aa0a6" stroke-width="2.5"/>')
     cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
@@ -65,7 +71,7 @@ def diode(ca, ra, ck, rk, na, nk, label, glass=False):
 
 def to92(c, r, nets, label):
     for i, n in enumerate(nets):
-        pad(c + i, r, n)
+        pad(c + i, r, n, f"{label} {'EBC'[i]}")
     x, y = xy(c + 1, r)
     draw.append(f'<path d="M{x-26},{y-6} L{x-26},{y-26} A26,20 0 0 1 {x+26},{y-26} L{x+26},{y-6} Z" fill="#1e2023"/>')
     text(x, y - 32, label, 11, 700)
@@ -81,13 +87,13 @@ def relay(c, r, nets, label):
     text(x0 + 3.5 * P, y0 + 2.4 * P, "SRD-05VDC", 10, 500, "#cfe0ff")
     pl = [(c, r + 2, "COM"), (c + 2, r, "bob"), (c + 2, r + 4, "bob"), (c + 7, r, "NC"), (c + 7, r + 4, "NO")]
     for (pc, pr, t), n in zip(pl, nets):
-        pad(pc, pr, n)
+        pad(pc, pr, n, label.split()[0] + " " + {"bob": "bobina"}.get(t, t))
         px, py = xy(pc, pr)
         text(px + (0 if pc != c else 18), py + (16 if pr == r else -9) if pc != c else py + 4, t, 9, 700, "#ffffff",
              anchor="middle" if pc != c else "start")
 
 def button(c, r, n1, n2, label):
-    pad(c, r, n1); pad(c + 2, r + 2, n2)
+    pad(c, r, n1, f"botón {label}"); pad(c + 2, r + 2, n2, f"botón {label} (otra pata)")
     x, y = xy(c + 1, r + 1)
     draw.append(f'<rect x="{x-24}" y="{y-24}" width="48" height="48" rx="4" fill="#2b2f33"/><circle cx="{x}" cy="{y}" r="12" fill="#d9dde2"/>')
     text(x, y + 40, label, 11, 700)
@@ -116,7 +122,7 @@ diode(18, 14, 18, 10, "Q2C", "+5V", "D2", glass=True)
 resistor(15, 13, 15, 17, "Q2B", "K1_DRV", "nnrn", "R3 1k")
 resistor(13, 13, 13, 17, "Q2B", "GND", "nnon", "R4 10k", side="left")
 # Fusible y shunt
-pad(23, 3, "K2NO"); pad(28, 3, "I_SHUNT")
+pad(23, 3, "K2NO", "F1 izq."); pad(28, 3, "I_SHUNT", "F1 der.")
 x1, y1 = xy(23, 3); x2, y2 = xy(28, 3)
 draw.append(f'<rect x="{x1-6}" y="{y1-12}" width="{x2-x1+12}" height="24" rx="5" fill="#1e2023"/>'
             f'<rect x="{x1+10}" y="{y1-8}" width="{x2-x1-20}" height="16" rx="3" fill="#dcedf5" stroke="#8fb3c4"/>'
@@ -124,7 +130,7 @@ draw.append(f'<rect x="{x1-6}" y="{y1-12}" width="{x2-x1+12}" height="24" rx="5"
 text((x1 + x2) / 2, y1 - 18, "F1 fusible 315 mA", 11)
 resistor(28, 5, 28, 9, "I_SHUNT", "GND", None, "R_SH", big=True)
 # PTC
-pad(23, 7, "K1NO"); pad(25, 7, "NODO_X")
+pad(23, 7, "K1NO", "RT1 izq."); pad(25, 7, "NODO_X", "RT1 der.")
 x, y = xy(24, 7)
 draw.append(f'<line x1="{x-P}" y1="{y}" x2="{x+P}" y2="{y}" stroke="#9aa0a6" stroke-width="2.5"/><circle cx="{x}" cy="{y}" r="12" fill="#e8b100" stroke="#8a6a00"/>')
 text(x, y - 17, "RT1 PTC", 11)
@@ -138,7 +144,7 @@ diode(22, 20, 26, 20, "FREQ", "+3V3", "D5 BAT85")
 diode(22, 22, 26, 22, "GND", "FREQ", "D6 BAT85")
 # Zener y C1
 diode(10, 22, 10, 19, "GND", "+3V3", "DZ1 3.6V")
-pad(11, 30, "+3V3"); pad(11, 32, "GND")
+pad(11, 30, "+3V3", "C1 arriba"); pad(11, 32, "GND", "C1 abajo")
 x, y = xy(11, 31)
 draw.append(f'<rect x="{x-8}" y="{y-10}" width="16" height="20" rx="4" fill="#e0a33a"/>')
 text(x + 14, y + 4, "C1 104", 10, anchor="start")
@@ -152,10 +158,10 @@ text((xa + xb) / 2, ya + 28, "OLED", 11, 700, "#8fb8ff")
 draw.append(f'<rect x="{(xa+xb)/2-26}" y="{yb+14}" width="52" height="30" rx="6" fill="#b9bec4"/>')
 text((xa + xb) / 2, ya + 5.2 * P, "ESP32-C3", 13, 700, "#ffffff")
 for i, n in enumerate(L):
-    pad(2, 26 + i, n)
+    pad(2, 26 + i, n, "ESP pin " + ["3", "4", "5", "6", "7", "8", "9", "10"][i])
     text(xy(2, 26 + i)[0] + 12, xy(2, 26 + i)[1] + 4, ["3", "4", "5", "6", "7", "8", "9", "10"][i], 9, 700, "#ffffff", "start")
 for i, n in enumerate(R):
-    pad(9, 26 + i, n or "NC")
+    pad(9, 26 + i, n or "NC", "ESP pin " + ["0", "1", "2", "TX", "RX", "V3", "GD", "V5"][i])
     text(xy(9, 26 + i)[0] - 12, xy(9, 26 + i)[1] + 4, ["0", "1", "2", "TX", "RX", "V3", "GD", "V5"][i], 9, 700, "#ffffff", "end")
 # ADS1115 (cabecera de 10 pines en la fila 31)
 xa, ya = xy(13, 26)
@@ -163,7 +169,7 @@ draw.append(f'<rect x="{xa-14}" y="{ya-12}" width="{9*P+28}" height="{5*P+24}" r
 text(xa + 4.5 * P, ya + 1.2 * P, "ADS1115", 14, 700, "#ffffff")
 for i, (nm, n) in enumerate(zip(["VDD", "GND", "SCL", "SDA", "ADDR", "ALRT", "A0", "A1", "A2", "A3"],
                                 ["+3V3", "GND", "SCL", "SDA", "GND", "NC", "V_ADC", "X_ADC", "I_SHUNT", "BTN"])):
-    pad(13 + i, 31, n)
+    pad(13 + i, 31, n, "ADS " + nm)
     x, y = xy(13 + i, 31)
     text(x + 4, y - 12, nm, 9, 700, "#ffffff", "start", rot=-90)
 # Nodo X: referencias y protecciones (fila 35 = tira comun)
@@ -190,47 +196,68 @@ button(10, 39, "BTN_R", "GND", "REL")
 x, y = xy(25.5, 27.5)
 draw.append(f'<circle cx="{x}" cy="{y}" r="34" fill="#1e2023"/><circle cx="{x}" cy="{y}" r="6" fill="#55595e"/>')
 text(x, y - 40, "BZ1", 11)
-pad(24, 26, "BZ_N"); pad(27, 26, "+5V")
+pad(24, 26, "BZ_N", "BZ1 −"); pad(27, 26, "+5V", "BZ1 +")
 text(xy(27, 26)[0] + 8, xy(27, 26)[1] - 8, "+", 14, 700, "#ffffff", "start")
 to92(23, 30, ["GND", "Q3B", "BZ_N"], "Q3")
 resistor(27, 30, 27, 33, "Q3B", "BUZ", "nnrn", "R18 1k")
 # Jacks (fuera de la placa)
-pad(1, 0, "PROBE_R"); pad(5, 0, "GND")
+pad(1, 0, "PROBE_R", "punta ROJA"); pad(5, 0, "GND", "punta NEGRA")
 
 # ------------------------------------------------------------------ cables
 COL = {"+5V": "#e8590c", "+3V3": "#d22a3f", "GND": "#1d2421", "SDA": "#e0a100", "SCL": "#1d64c8",
-       "PROBE_R": "#c62828", "K2NC": "#c62828", "K2NO": "#c62828", "I_SHUNT": "#c62828", "V_IN": "#c62828", "K1NO": "#c62828",
-       "K1_DRV": "#7b3fbf", "K2_DRV": "#7b3fbf", "BUZ": "#7b3fbf", "BTN": "#7b3fbf"}
+       "PROBE_R": "#b71c1c", "K2NC": "#b71c1c", "K2NO": "#b71c1c", "I_SHUNT": "#b71c1c", "V_IN": "#c2185b", "K1NO": "#ad1457"}
+PALETA = ["#2e7d32", "#6a1b9a", "#00838f", "#5d4037", "#1565c0", "#9e9d24", "#d81b60", "#00695c",
+          "#4527a0", "#ef6c00", "#558b2f", "#0277bd", "#8e24aa", "#00897b", "#795548", "#283593"]
 nets = {}
-for c, r, n in pads:
+desc = {}
+for c, r, n, dsc in pads:
     if n in ("NC",):
         continue
     nets.setdefault(n, []).append((c, r))
+    desc[(c, r)] = dsc
 wires = []
-for n, pts in nets.items():
+cables = []   # (numero, color, desde, hasta, red)
+badges = []
+k = 0
+for n in sorted(nets, key=lambda n: (n not in ("PROBE_R", "GND", "+5V", "+3V3"), n)):
+    pts = list(dict.fromkeys(nets[n]))
     if len(pts) < 2:
         continue
-    # arbol de expansion minima (Prim): cada pad se une al mas cercano ya conectado
-    pts = list(dict.fromkeys(pts))
-    inside = [pts[0]]
-    edges = []
-    rest = pts[1:]
+    if n not in COL:
+        COL[n] = PALETA[k % len(PALETA)]; k += 1
+    # arbol de expansion minima (Prim)
+    inside = [pts[0]]; edges = []; rest = pts[1:]
     while rest:
-        a, b = min(((a, b) for a in inside for b in rest),
-                   key=lambda e: (e[0][0] - e[1][0]) ** 2 + (e[0][1] - e[1][1]) ** 2)
-        edges.append((a, b)); inside.append(b); rest.remove(b)
-    col = COL.get(n, "#138a55")
-    for a, b in edges:
-        if (a[0] == b[0] and abs(a[1] - b[1]) <= 0) :
-            continue
-        x1, y1 = xy(*a); x2, y2 = xy(*b)
+        a2, b2 = min(((a, b) for a in inside for b in rest),
+                     key=lambda e: (e[0][0] - e[1][0]) ** 2 + (e[0][1] - e[1][1]) ** 2)
+        edges.append((a2, b2)); inside.append(b2); rest.remove(b2)
+    col = COL[n]
+    for a2, b2 in edges:
+        num = len(cables) + 1
+        cables.append((num, col, desc.get(a2, ""), desc.get(b2, ""), n))
+        x1, y1 = xy(*a2); x2, y2 = xy(*b2)
         dx, dy = x2 - x1, y2 - y1
-        mx, my = (x1 + x2) / 2 - dy * 0.12, (y1 + y2) / 2 + dx * 0.12
-        wires.append(f'<path d="M{x1},{y1} Q{mx},{my} {x2},{y2}" fill="none" stroke="#00000055" stroke-width="7" stroke-linecap="round"/>'
-                     f'<path d="M{x1},{y1} Q{mx},{my} {x2},{y2}" fill="none" stroke="{col}" stroke-width="4.2" stroke-linecap="round" opacity="0.93"/>')
+        dist = math.hypot(dx, dy) / P
+        def badge(bx, by):
+            badges.append(f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="9" fill="#ffffff" stroke="{col}" stroke-width="2.4"/>'
+                          f'<text x="{bx:.1f}" y="{by+3.7:.1f}" text-anchor="middle" style="{F};font-size:{10 if num < 100 else 8.5}px;font-weight:800" fill="#17201c">{num}</text>')
+        if dist > 8.5:
+            # cable largo: tramo corto en cada extremo + numero (buscar el mismo numero en el otro extremo)
+            ux, uy = dx / (dist * P), dy / (dist * P)
+            for (sx, sy, k2) in ((x1, y1, 1), (x2, y2, -1)):
+                ex, ey = sx + k2 * ux * 20, sy + k2 * uy * 20
+                wires.append(f'<line x1="{sx}" y1="{sy}" x2="{ex:.1f}" y2="{ey:.1f}" stroke="#00000055" stroke-width="7" stroke-linecap="round"/>'
+                             f'<line x1="{sx}" y1="{sy}" x2="{ex:.1f}" y2="{ey:.1f}" stroke="{col}" stroke-width="4.6" stroke-linecap="round"/>')
+                badge(sx + k2 * ux * 30, sy + k2 * uy * 30)
+        else:
+            mx, my = (x1 + x2) / 2 - dy * 0.12, (y1 + y2) / 2 + dx * 0.12
+            wires.append(f'<path d="M{x1},{y1} Q{mx},{my} {x2},{y2}" fill="none" stroke="#00000055" stroke-width="7" stroke-linecap="round"/>'
+                         f'<path d="M{x1},{y1} Q{mx},{my} {x2},{y2}" fill="none" stroke="{col}" stroke-width="4.2" stroke-linecap="round" opacity="0.95"/>')
+            if dist > 2.5:
+                badge(0.25 * x1 + 0.5 * mx + 0.25 * x2, 0.25 * y1 + 0.5 * my + 0.25 * y2)
 
 padsvg = []
-for c, r, n in pads:
+for c, r, n, _d in pads:
     x, y = xy(c, r)
     padsvg.append(f'<circle cx="{x}" cy="{y}" r="5.5" fill="#c9a227" stroke="#6b4a22" stroke-width="1"/>')
 
@@ -248,20 +275,27 @@ H = OY + ROWS * P + 60
 legend = []
 lx = OX + COLS * P + 40
 for i, (t, c) in enumerate([("+5V", "#e8590c"), ("+3.3V", "#d22a3f"), ("GND", "#1d2421"), ("SDA", "#e0a100"), ("SCL", "#1d64c8"),
-                             ("punta roja / relés / shunt", "#c62828"), ("control (relés, buzzer, botones)", "#7b3fbf"), ("señales analógicas", "#138a55")]):
+                             ("punta roja / relés / shunt", "#b71c1c")]):
     y = OY + 20 + i * 30
     legend.append(f'<line x1="{lx}" y1="{y}" x2="{lx+34}" y2="{y}" stroke="{c}" stroke-width="6" stroke-linecap="round"/>')
     legend.append(f'<text x="{lx+44}" y="{y+5}" style="{F};font-size:13px" fill="#17201c">{t}</text>')
-notes = ["Vista desde arriba (lado de componentes).", "Placa perforada de 7 × 9 cm (rejilla 2.54 mm).",
+legend.append(f'<circle cx="{lx+17}" cy="{OY+200}" r="9" fill="#fff" stroke="#2e7d32" stroke-width="2.2"/><text x="{lx+17}" y="{OY+204}" text-anchor="middle" style="{F};font-size:10px;font-weight:800">7</text>')
+legend.append(f'<text x="{lx+44}" y="{OY+204}" style="{F};font-size:13px" fill="#17201c">número de cable</text>')
+legend.append(f'<text x="{lx}" y="{OY+232}" style="{F};font-size:12.5px" fill="#40504a">Cables largos: solo se dibuja un tramo</text>')
+legend.append(f'<text x="{lx}" y="{OY+250}" style="{F};font-size:12.5px" fill="#40504a">corto en cada punta. Une los dos puntos</text>')
+legend.append(f'<text x="{lx}" y="{OY+268}" style="{F};font-size:12.5px" fill="#40504a">que tienen el mismo número (ver lista).</text>')
+notes = ["Las otras señales tienen cada una", "su propio color.", "", "Vista desde arriba (lado de componentes).", "Placa perforada de 7 × 9 cm (rejilla 2.54 mm).",
          "Cables: usa cable aislado; los cruces", "no se tocan.", "Las tiras de la placa no se usan:", "cada unión es un cable o una soldadura.",
          "Los cables rojos gruesos llevan la", "corriente medida (hasta 300 mA)."]
 for i, t in enumerate(notes):
-    legend.append(f'<text x="{lx}" y="{OY + 300 + i*20}" style="{F};font-size:12.5px" fill="#40504a">{t}</text>')
+    legend.append(f'<text x="{lx}" y="{OY + 320 + i*20}" style="{F};font-size:12.5px" fill="#40504a">{t}</text>')
 
 svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
        f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
        f'<text x="{OX-20}" y="40" style="{F};font-size:28px;font-weight:700" fill="#17201c">Montaje en placa perforada</text>',
        f'<text x="{OX-20}" y="64" style="{F};font-size:14px" fill="#56635d">Multímetro ESP32-C3 (OLED 0.42") · v1.3 · Q = S9014 · C1 = cerámico 104 · disposición sugerida</text>']
-svg += hole_grid() + draw + wires + padsvg + jacks + labels + legend + ["</svg>"]
+svg += hole_grid() + draw + wires + padsvg + jacks + labels + badges + legend + ["</svg>"]
 open(OUT, "w", encoding="utf-8").write("\n".join(svg))
+import json
+json.dump(cables, open(OUT.rsplit(".", 1)[0] + "-cables.json", "w", encoding="utf-8"), ensure_ascii=False)
 print("ok", W, H)
