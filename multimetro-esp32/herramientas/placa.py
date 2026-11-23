@@ -22,7 +22,7 @@ def text(x, y, t, size=12, weight=600, color="#17201c", anchor="middle", rot=0):
 
 BANDS = {"k": "#1a1a1a", "n": "#7b4a1e", "r": "#c62828", "o": "#ef6c00", "y": "#f2cc1b", "g": "#2e7d32", "u": "#c9a227"}
 
-def resistor(c1, r1, c2, r2, n1, n2, bands, label, big=False):
+def resistor(c1, r1, c2, r2, n1, n2, bands, label, big=False, side="right"):
     pad(c1, r1, n1); pad(c2, r2, n2)
     x1, y1 = xy(c1, r1); x2, y2 = xy(c2, r2)
     draw.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#9aa0a6" stroke-width="2.5"/>')
@@ -43,6 +43,8 @@ def resistor(c1, r1, c2, r2, n1, n2, bands, label, big=False):
     draw.append(g)
     if abs(ang) < 45 or abs(ang) > 135:
         text(cx, cy - 12, label, 11)
+    elif side == "left":
+        text(cx - 14, cy + 4, label, 11, anchor="end")
     else:
         text(cx + 14, cy + 4, label, 11, anchor="start")
 
@@ -66,7 +68,8 @@ def to92(c, r, nets, label):
         pad(c + i, r, n)
     x, y = xy(c + 1, r)
     draw.append(f'<path d="M{x-26},{y-6} L{x-26},{y-26} A26,20 0 0 1 {x+26},{y-26} L{x+26},{y-6} Z" fill="#1e2023"/>')
-    text(x, y - 13, label, 9, 700, "#ffffff")
+    text(x, y - 32, label, 11, 700)
+    text(x, y - 12, "S9014", 8, 700, "#ffffff")
     for i, l in enumerate("EBC"):
         text(xy(c + i, r)[0], y + 18, l, 9, 700, "#56635d")
 
@@ -107,11 +110,11 @@ relay(13, 3, ["K2NC", "+5V", "Q2C", "V_IN", "K1NO"], "K1 · Ω")
 to92(3, 11, ["GND", "Q1B", "Q1C"], "Q1")
 diode(7, 14, 7, 10, "Q1C", "+5V", "D1", glass=True)
 resistor(4, 13, 4, 17, "Q1B", "K2_DRV", "nnrn", "R1 1k")
-resistor(2, 13, 2, 17, "Q1B", "GND", "nnon", "R2 10k")
+resistor(2, 13, 2, 17, "Q1B", "GND", "nnon", "R2 10k", side="left")
 to92(14, 11, ["GND", "Q2B", "Q2C"], "Q2")
 diode(18, 14, 18, 10, "Q2C", "+5V", "D2", glass=True)
 resistor(15, 13, 15, 17, "Q2B", "K1_DRV", "nnrn", "R3 1k")
-resistor(13, 13, 13, 17, "Q2B", "GND", "nnon", "R4 10k")
+resistor(13, 13, 13, 17, "Q2B", "GND", "nnon", "R4 10k", side="left")
 # Fusible y shunt
 pad(23, 3, "K2NO"); pad(28, 3, "I_SHUNT")
 x1, y1 = xy(23, 3); x2, y2 = xy(28, 3)
@@ -138,7 +141,7 @@ diode(10, 22, 10, 19, "GND", "+3V3", "DZ1 3.6V")
 pad(11, 30, "+3V3"); pad(11, 32, "GND")
 x, y = xy(11, 31)
 draw.append(f'<rect x="{x-8}" y="{y-10}" width="16" height="20" rx="4" fill="#e0a33a"/>')
-text(x + 14, y + 4, "C1", 10, anchor="start")
+text(x + 14, y + 4, "C1 104", 10, anchor="start")
 # ESP32-C3 (USB abajo)
 L = ["REF_100K", "SENSE", "SDA", "SCL", "DESC", "K1_DRV", "REF_1M", "K2_DRV"]
 R = ["REF_1K", "REF_10K", None, "FREQ", "BUZ", "+3V3", "GND", "+5V"]
@@ -258,7 +261,7 @@ for i, t in enumerate(notes):
 svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
        f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
        f'<text x="{OX-20}" y="40" style="{F};font-size:28px;font-weight:700" fill="#17201c">Montaje en placa perforada</text>',
-       f'<text x="{OX-20}" y="64" style="{F};font-size:14px" fill="#56635d">Multímetro ESP32-C3 (OLED 0.42") · disposición sugerida de piezas y cables</text>']
+       f'<text x="{OX-20}" y="64" style="{F};font-size:14px" fill="#56635d">Multímetro ESP32-C3 (OLED 0.42") · v1.3 · Q = S9014 · C1 = cerámico 104 · disposición sugerida</text>']
 svg += hole_grid() + draw + wires + padsvg + jacks + labels + legend + ["</svg>"]
 open(OUT, "w", encoding="utf-8").write("\n".join(svg))
 print("ok", W, H)
