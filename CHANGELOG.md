@@ -7,6 +7,14 @@ Formato por versiones. El menú principal y el submenú **Herramientas ADB/FASTB
 
 ## V1.2 — 2026-11-23
 
+### scrcpy mejorado y respaldo de datos del cliente
+- Opción **7** (menú principal) ahora es un submenú de scrcpy 2.1.1: espejo
+  normal, espejo optimizado (pantalla del tel. apagada + despierto), **grabar
+  pantalla con audio** a `GRABACIONES\` y espejo de baja resolución.
+- Opción **14 → 5 → 4**: **respaldo de fotos/datos del cliente al PC** sin root
+  (`adb pull` de DCIM, Pictures, Movies, Music, Download, Documents, Recordings
+  y WhatsApp) a `BACKUPS\DATOS_<serial>_<fecha>\`. Util antes de formatear.
+
 ### Enlace a Frija (alternativa gráfica)
 - Opción **14 → 8 → 4**: abre la **fuente oficial de Frija** (hilo de XDA del
   autor) para descargarla aparte. No se incluye el binario (freeware de

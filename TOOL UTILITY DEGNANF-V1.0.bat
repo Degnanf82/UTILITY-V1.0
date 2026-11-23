@@ -238,10 +238,48 @@ goto:op6
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 :op7
+:scrcpymenu
+cls
 echo.
-	start "" scrcpy\scrcpy.exe
+call :c 05 "        SCRCPY  -  ESPEJO / GRABACION DE PANTALLA  (v2.1.1)"
 echo.
-goto:inicio
+echo.
+call :c 0E "   [1] "&call :c 06 "ESPEJO NORMAL"
+echo.
+call :c 0E "   [2] "&call :c 06 "ESPEJO OPTIMIZADO (pantalla del tel. apagada + despierto)"
+echo.
+call :c 0E "   [3] "&call :c 06 "GRABAR PANTALLA CON AUDIO (a archivo .mp4)"
+echo.
+call :c 0E "   [4] "&call :c 06 "ESPEJO BAJA RESOLUCION (equipos lentos)"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
+echo.
+echo.
+call :c 0E "   Requiere depuracion USB activada. Cierra la ventana de scrcpy para terminar."
+echo.
+echo.
+set "sc="
+set /p "sc=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%sc%"=="1" start "" "%~dp0scrcpy\scrcpy.exe"
+if "%sc%"=="2" start "" "%~dp0scrcpy\scrcpy.exe" --turn-screen-off --stay-awake
+if "%sc%"=="4" start "" "%~dp0scrcpy\scrcpy.exe" --max-size 800 --video-bit-rate 4M
+if "%sc%"=="3" goto scrcpyrec
+if "%sc%"=="0" goto inicio
+goto scrcpymenu
+
+:scrcpyrec
+set "TS=%date:~-4%-%date:~3,2%-%date:~0,2%_%time:~0,2%%time:~3,2%"
+set "TS=%TS: =0%"
+set "GRDIR=%~dp0GRABACIONES"
+mkdir "%GRDIR%" 2>nul
+echo.
+call :c 0E "  Grabando (video + audio). Cierra la ventana de scrcpy para detener."
+echo.
+call :c 0E "  Se guardara en: "&echo %GRDIR%\scrcpy_%TS%.mp4
+echo.
+start "" "%~dp0scrcpy\scrcpy.exe" --record "%GRDIR%\scrcpy_%TS%.mp4"
+pause
+goto scrcpymenu
 
 :op8
 echo.
@@ -551,6 +589,8 @@ call :c 0E "   [2] "&call :c 06 "RESTAURAR UNA PARTICION DESDE UN RESPALDO TUYO"
 echo.
 call :c 0E "   [3] "&call :c 06 "RESPALDAR APPS Y DATOS (adb backup)"
 echo.
+call :c 0E "   [4] "&call :c 06 "RESPALDAR FOTOS/DATOS DEL CLIENTE AL PC (sin root)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER"
 echo.
 echo.
@@ -559,8 +599,41 @@ set /p "b=  ╚═════►  SELECCIONE UNA OPCION: "
 if "%b%"=="1" goto bkpdump
 if "%b%"=="2" goto bkprestore
 if "%b%"=="3" goto bkpapps
+if "%b%"=="4" goto bkpdata
 if "%b%"=="0" goto toolsadb
 goto backupmenu
+
+:bkpdata
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "TS=%date:~-4%-%date:~3,2%-%date:~0,2%_%time:~0,2%%time:~3,2%"
+set "TS=%TS: =0%"
+set "DDIR=%~dp0BACKUPS\DATOS_%SERIAL%_%TS%"
+mkdir "%DDIR%" 2>nul
+echo.
+call :c 0E "  Desbloquea el telefono y acepta el acceso a archivos si lo pide."
+echo.
+call :c 0E "  Copiando a: "&echo %DDIR%
+echo.
+for %%d in (DCIM Pictures Movies Music Download Documents Recordings) do call :pulldir /sdcard/%%d
+call :pulldir /sdcard/WhatsApp
+call :pulldir /sdcard/Android/media/com.whatsapp/WhatsApp
+echo.
+call :c 0A "  RESPALDO DE DATOS TERMINADO."
+echo.
+call :c 0E "  Revisa la carpeta; las que no existan en el equipo se omiten."
+echo.
+pause
+goto backupmenu
+
+:pulldir
+set "SRC=%~1"
+echo    %SRC% ...
+adb %ADBSEL% pull -a "%SRC%" "%DDIR%" >nul 2>&1
+exit /b
 
 :bkpdump
 cls
