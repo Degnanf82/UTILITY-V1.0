@@ -7,6 +7,13 @@ Formato por versiones. El menú principal y el submenú **Herramientas ADB/FASTB
 
 ## V1.2 — 2026-11-23
 
+### Flasheo de firmware Samsung oficial
+- Opción **14 → 8 → 3**: flashea en modo Download el firmware oficial ya
+  descargado (opción 2). Extrae el `.zip` con `7za`, detecta los `.tar.md5`
+  (BL/AP/CP y HOME_CSC o CSC), **prefiere HOME_CSC** (conserva datos) y usa
+  `samloader flash --wait`. Avisa de hacer el backup anti-brick antes y de que
+  solo-CSC borra datos. Requiere el driver USB Samsung (menú 6).
+
 ### Guía de cuenta / FRP por proceso oficial
 - Opción **14 → 9**: pantalla que guía el **camino legítimo** cuando un cliente
   trae un equipo bloqueado por cuenta Google / FRP: exige prueba de propiedad,
