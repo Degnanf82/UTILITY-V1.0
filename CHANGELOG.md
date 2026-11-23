@@ -7,6 +7,13 @@ Formato por versiones. El menú principal y el submenú **Herramientas ADB/FASTB
 
 ## V1.2 — 2026-11-23
 
+### Enlace a Frija (alternativa gráfica)
+- Opción **14 → 8 → 4**: abre la **fuente oficial de Frija** (hilo de XDA del
+  autor) para descargarla aparte. No se incluye el binario (freeware de
+  licencia no redistribuible); solo se enlaza. samloader sigue siendo la
+  herramienta integrada (descarga + flasheo). Enlace en `config.ini`
+  (`CFG_FRIJA`).
+
 ### Flasheo de firmware Samsung oficial
 - Opción **14 → 8 → 3**: flashea en modo Download el firmware oficial ya
   descargado (opción 2). Extrae el `.zip` con `7za`, detecta los `.tar.md5`
