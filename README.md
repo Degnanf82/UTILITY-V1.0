@@ -28,6 +28,7 @@ Usa `pm disable-user --user 0` (reversible con `pm enable`), probando una lista 
 Usa **samloader** (incluido en `samloader/`, licencia Apache-2.0, ver `samloader/NOTICE.txt`). El menú elige automáticamente `samloader-x64.exe` o `samloader-arm64.exe` según la arquitectura de Windows.
 - **[1] Ver última versión disponible:** consulta los servidores de Samsung (`check-update`).
 - **[2] Descargar firmware oficial:** descarga la última versión a `FIRMWARE\<modelo>_<region>\` (`download`).
+- **[3] Flashear firmware descargado:** en modo Download, extrae el `.zip` con `7za`, detecta BL/AP/CP y HOME_CSC/CSC (prefiere HOME_CSC para conservar datos) y flashea con `samloader flash --wait`. Haz el backup anti-brick (opción 5) antes y ten instalado el driver USB Samsung (menú 6).
 - No necesita el equipo conectado. Pide **modelo** (ej. `SM-A325M`) y **CSC/región** (ej. `COO`, `UNE`, `XAA`).
 - Los binarios (x86_64 y ARM64) son los releases oficiales de `topjohnwu/samloader-rs`, sin modificar (SHA-256 en el NOTICE).
 

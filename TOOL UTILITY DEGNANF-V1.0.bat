@@ -1111,16 +1111,19 @@ call :c 0E "   [1] "&call :c 06 "VER ULTIMA VERSION DISPONIBLE"
 echo.
 call :c 0E "   [2] "&call :c 06 "DESCARGAR FIRMWARE OFICIAL"
 echo.
+call :c 0E "   [3] "&call :c 06 "FLASHEAR FIRMWARE DESCARGADO (modo Download)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER"
 echo.
 echo.
-call :c 0E "   No requiere conectar el equipo. Necesitas MODELO (ej: SM-A325M) y CSC/REGION (ej: COO, UNE, XAA)."
+call :c 0E "   [1] y [2] no requieren conectar el equipo. Necesitas MODELO (ej: SM-A325M) y CSC/REGION (ej: COO, UNE, XAA)."
 echo.
 echo.
 set "sf="
 set /p "sf=  ╚═════►  SELECCIONE UNA OPCION: "
 if "%sf%"=="1" goto samfwcheck
 if "%sf%"=="2" goto samfwdl
+if "%sf%"=="3" goto samfwflash
 if "%sf%"=="0" goto toolsadb
 goto samfwmenu
 
@@ -1161,6 +1164,89 @@ echo.
 "%SLEXE%" download -m %SFM% -r %SFR% -d "%SFO%"
 echo.
 call :c 0A "  PROCESO TERMINADO. Revisa la carpeta y la salida de arriba."
+echo.
+pause
+goto samfwmenu
+
+:samfwflash
+cls
+echo.
+call :c 05 "   FLASHEAR FIRMWARE SAMSUNG OFICIAL  (modo Download)"
+echo.
+echo.
+call :c 0C "  ADVERTENCIA: si se interrumpe el proceso el equipo puede quedar sin"
+echo.
+call :c 0C "  arrancar. Haz antes el BACKUP ANTI-BRICK (menu Herramientas, opcion 5)."
+echo.
+call :c 0E "  Necesitas el driver USB Samsung (menu 6) y el equipo en modo DOWNLOAD."
+echo.
+echo.
+set "FWDIR="
+set /p "FWDIR=  Carpeta del firmware descargado (FIRMWARE\MODELO_REGION): "
+set "FWDIR=%FWDIR:"=%"
+if not exist "%FWDIR%\" (
+	call :c 0C "  Carpeta no encontrada."
+	echo.
+	pause
+	goto samfwmenu
+)
+set "HASTAR="
+for %%f in ("%FWDIR%\*.tar.md5") do set "HASTAR=1"
+if not defined HASTAR (
+	for %%z in ("%FWDIR%\*.zip") do (
+		call :c 0E "  Extrayendo firmware con 7za, espera... "
+		echo.
+		"%~dp07za.exe" x "%%z" -o"%FWDIR%" -y >nul
+	)
+)
+set "FBL=" & for %%f in ("%FWDIR%\BL_*.tar.md5") do set "FBL=%%~nxf"
+set "FAP=" & for %%f in ("%FWDIR%\AP_*.tar.md5") do set "FAP=%%~nxf"
+set "FCP=" & for %%f in ("%FWDIR%\CP_*.tar.md5") do set "FCP=%%~nxf"
+set "FCSC=" & for %%f in ("%FWDIR%\HOME_CSC_*.tar.md5") do set "FCSC=%%~nxf"
+set "CSCWIPE=0"
+if not defined FCSC (
+	for %%f in ("%FWDIR%\CSC_*.tar.md5") do set "FCSC=%%~nxf"
+	if defined FCSC set "CSCWIPE=1"
+)
+if not defined FAP (
+	call :c 0C "  No encontre AP_*.tar.md5 en esa carpeta. Descarga primero (opcion 2)."
+	echo.
+	pause
+	goto samfwmenu
+)
+echo.
+call :c 0E "  Archivos detectados:"
+echo.
+echo    BL  : %FBL%
+echo    AP  : %FAP%
+echo    CP  : %FCP%
+echo    CSC : %FCSC%
+echo.
+if "%CSCWIPE%"=="1" call :c 0C "  Aviso: solo hay CSC (no HOME_CSC). Esto BORRA los datos del equipo."
+echo.
+set "ARGS=flash --wait"
+if defined FBL set "ARGS=%ARGS% --BL %FBL%"
+if defined FAP set "ARGS=%ARGS% --AP %FAP%"
+if defined FCP set "ARGS=%ARGS% --CP %FCP%"
+if defined FCSC set "ARGS=%ARGS% --CSC %FCSC%"
+echo.
+call :c 0C "  Vas a flashear firmware OFICIAL en este equipo."
+echo.
+set "OK="
+set /p "OK=  Escribe FLASHEAR en mayusculas para continuar: "
+if not "%OK%"=="FLASHEAR" goto samfwmenu
+echo.
+call :c 0E "  Pon el equipo en modo DOWNLOAD (apagado: Vol- + Vol+ y conecta USB)."
+echo.
+call :c 0E "  samloader esperara a que conectes (--wait). No desconectes durante el proceso."
+echo.
+pushd "%FWDIR%"
+"%SLEXE%" %ARGS%
+popd
+echo.
+call :c 0A "  PROCESO TERMINADO. Revisa la salida: si dice error, NO reinicies a la"
+echo.
+call :c 0A "  fuerza; vuelve a intentar o consulta el servicio oficial."
 echo.
 pause
 goto samfwmenu
