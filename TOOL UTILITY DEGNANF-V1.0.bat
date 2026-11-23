@@ -1113,6 +1113,8 @@ call :c 0E "   [2] "&call :c 06 "DESCARGAR FIRMWARE OFICIAL"
 echo.
 call :c 0E "   [3] "&call :c 06 "FLASHEAR FIRMWARE DESCARGADO (modo Download)"
 echo.
+call :c 0E "   [4] "&call :c 06 "FRIJA - ALTERNATIVA GRAFICA (abre fuente oficial)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER"
 echo.
 echo.
@@ -1124,7 +1126,33 @@ set /p "sf=  ╚═════►  SELECCIONE UNA OPCION: "
 if "%sf%"=="1" goto samfwcheck
 if "%sf%"=="2" goto samfwdl
 if "%sf%"=="3" goto samfwflash
+if "%sf%"=="4" goto samfwfrija
 if "%sf%"=="0" goto toolsadb
+goto samfwmenu
+
+:samfwfrija
+cls
+echo.
+call :c 05 "   FRIJA  -  DESCARGADOR GRAFICO DE FIRMWARE SAMSUNG"
+echo.
+echo.
+call :c 06 "  Frija es una herramienta GRAFICA de terceros (freeware) para descargar"
+echo.
+call :c 06 "  firmware oficial de Samsung. No viene incluida: se abre su fuente oficial"
+echo.
+call :c 06 "  (hilo de XDA del autor) para que la descargues tu desde ahi."
+echo.
+echo.
+call :c 0E "  Nota: este tool ya descarga y flashea firmware con samloader (opciones"
+echo.
+call :c 0E "  1 a 3). Frija es solo una alternativa grafica para la descarga."
+echo.
+echo.
+start "" "%CFG_FRIJA%"
+call :c 0A "  Abriendo la fuente oficial de Frija en el navegador..."
+echo.
+echo.
+pause
 goto samfwmenu
 
 :samfwcheck

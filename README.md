@@ -31,6 +31,7 @@ Usa **samloader** (incluido en `samloader/`, licencia Apache-2.0, ver `samloader
 - **[3] Flashear firmware descargado:** en modo Download, extrae el `.zip` con `7za`, detecta BL/AP/CP y HOME_CSC/CSC (prefiere HOME_CSC para conservar datos) y flashea con `samloader flash --wait`. Haz el backup anti-brick (opción 5) antes y ten instalado el driver USB Samsung (menú 6).
 - No necesita el equipo conectado. Pide **modelo** (ej. `SM-A325M`) y **CSC/región** (ej. `COO`, `UNE`, `XAA`).
 - Los binarios (x86_64 y ARM64) son los releases oficiales de `topjohnwu/samloader-rs`, sin modificar (SHA-256 en el NOTICE).
+- **[4] Frija (alternativa gráfica):** abre la fuente oficial de Frija (XDA) para descargarla aparte. No se incluye el binario (freeware); solo se enlaza. samloader sigue siendo la herramienta integrada.
 
 ## Novedades (Fase 4: recuperación de equipo)
 
