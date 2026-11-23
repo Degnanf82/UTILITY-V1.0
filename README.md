@@ -1,7 +1,9 @@
-# TOOL UTILITY BY DEGNANF
+# TOOL UTILITY BY DEGNANF — V1.2
 
 Utilidad en Windows (archivo `.bat`) con herramientas Android (ADB, fastboot, scrcpy),
 drivers, firmware y utilidades varias.
+
+> Historial completo de cambios en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Uso
 
@@ -47,7 +49,7 @@ Usa **samloader** (incluido en `samloader/`, licencia Apache-2.0, ver `samloader
 - **[4] Quitar una app por nombre (manual):** quita cualquier app precargada sin root (`pm uninstall -k --user 0`), reversible, pidiendo confirmar con `SI`.
 - Fuente y licencia de la lista: `debloat/NOTICE.txt` (GPL-3.0).
 
-## Versión 1.1
+## Versión
 
 ## Novedades (Fase 2)
 
