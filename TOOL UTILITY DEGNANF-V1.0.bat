@@ -1,7 +1,7 @@
 ??&cls
 @setlocal DisableDelayedExpansion
 @echo off & pushd "%CD%" & CD /D "%~dp0"
-TITLE TOOL UTILITY BY DEGNANF V1.1
+TITLE TOOL UTILITY BY DEGNANF V1.2
 MODE con:cols=85 lines=35
 chcp 65001
 color 02
@@ -1374,7 +1374,6 @@ goto:inicio
 			goto:fastbootreadmimtk
 		) else (
 			goto:fastbootreadmiqcom
-				)
 		)
 		:fastbootreadmiqcom
 		call :c 0C "QUALCOMM"
@@ -1484,7 +1483,6 @@ goto:inicio
 			goto:fastbootreadmotoqcom
 		) else (
 			goto:fastbootreadmotospd
-				)
 		)
 		:fastbootreadmotoqcom
 		call :c 0C "QUALCOMM"
