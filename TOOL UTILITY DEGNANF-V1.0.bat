@@ -7,6 +7,7 @@ chcp 65001
 color 02
 set current_dir=%cd%
 call :loadconfig
+call :toolcheck
 
 
 :inicio
@@ -564,6 +565,10 @@ call :c 0E "   [B] "&call :c 06 "DIAGNOSTICO DE BATERIA (salud / ciclos / temp)"
 echo.
 call :c 0E "   [C] "&call :c 06 "CODIGOS DE PRUEBA / DIAGNOSTICO (por marca)"
 echo.
+call :c 0E "   [D] "&call :c 06 "COMBINACIONES DE BOTONES (recovery/download/fastboot)"
+echo.
+call :c 0E "   [E] "&call :c 06 "UTILIDADES RAPIDAS (ADB WiFi / captura)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -580,6 +585,8 @@ if "%t%"=="8" goto samfwmenu
 if "%t%"=="9" goto frpoficial
 if /I "%t%"=="B" goto battdiag
 if /I "%t%"=="C" goto codesmenu
+if /I "%t%"=="D" goto btncombos
+if /I "%t%"=="E" goto utilmenu
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -1646,6 +1653,219 @@ call :c 0E "   = %~2"
 echo.
 exit /b
 
+:btncombos
+cls
+echo.
+call :c 05 "   COMBINACIONES DE BOTONES  (equipo APAGADO salvo que se indique)"
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "SAMSUNG"
+echo.
+call :c 0E "   [2] "&call :c 06 "XIAOMI / REDMI / POCO"
+echo.
+call :c 0E "   [3] "&call :c 06 "MOTOROLA"
+echo.
+call :c 0E "   [4] "&call :c 06 "HUAWEI / HONOR"
+echo.
+call :c 0E "   [5] "&call :c 06 "OPPO / REALME / ONEPLUS"
+echo.
+call :c 0E "   [6] "&call :c 06 "VIVO / iQOO"
+echo.
+call :c 0E "   [7] "&call :c 06 "MEDIATEK (Tecno/Infinix/itel)"
+echo.
+call :c 0E "   [8] "&call :c 06 "GOOGLE PIXEL / LG"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+call :c 0E "   Varia por modelo. Manten los botones hasta que aparezca el modo."
+echo.
+echo.
+set "bc="
+set /p "bc=  ╚═════►  SELECCIONE UNA MARCA: "
+if "%bc%"=="1" goto cmbsam
+if "%bc%"=="2" goto cmbxia
+if "%bc%"=="3" goto cmbmoto
+if "%bc%"=="4" goto cmbhua
+if "%bc%"=="5" goto cmboppo
+if "%bc%"=="6" goto cmbvivo
+if "%bc%"=="7" goto cmbmtk
+if "%bc%"=="8" goto cmbpix
+if "%bc%"=="0" goto toolsadb
+goto btncombos
+
+:cmbsam
+cls
+call :c 05 "   SAMSUNG"
+echo.
+echo.
+call :prc "DOWNLOAD (Odin)" "Vol+ y Vol- juntos, luego conecta el USB al PC"
+call :prc "RECOVERY" "Vol+ + Power (modelos con boton lateral: Vol+ + Bixby + Power)"
+call :prc "APAGADO FORZADO" "Vol- + Power ~10 seg"
+echo.
+pause
+goto btncombos
+
+:cmbxia
+cls
+call :c 05 "   XIAOMI / REDMI / POCO"
+echo.
+echo.
+call :prc "RECOVERY" "Vol+ + Power"
+call :prc "FASTBOOT" "Vol- + Power"
+call :prc "APAGADO FORZADO" "Power ~10 seg"
+echo.
+pause
+goto btncombos
+
+:cmbmoto
+cls
+call :c 05 "   MOTOROLA"
+echo.
+echo.
+call :prc "FASTBOOT/BOOTLOADER" "Vol- + Power"
+call :prc "RECOVERY" "entra a Fastboot y navega con Vol a Recovery, confirma con Power"
+call :prc "APAGADO FORZADO" "Vol+ + Power ~10 seg"
+echo.
+pause
+goto btncombos
+
+:cmbhua
+cls
+call :c 05 "   HUAWEI / HONOR"
+echo.
+echo.
+call :prc "FASTBOOT" "Vol- y conecta el USB al PC"
+call :prc "RECOVERY / eRecovery" "Vol+ + Power (para eRecovery, conectado al cargador)"
+call :prc "APAGADO FORZADO" "Power ~10-15 seg"
+echo.
+pause
+goto btncombos
+
+:cmboppo
+cls
+call :c 05 "   OPPO / REALME / ONEPLUS"
+echo.
+echo.
+call :prc "RECOVERY (Oppo/Realme)" "Vol+ + Power (algunos: Vol-)"
+call :prc "RECOVERY (OnePlus)" "Vol- + Power"
+call :prc "FASTBOOT (OnePlus)" "Vol+ + Vol- + Power"
+call :prc "APAGADO FORZADO" "Power ~10 seg"
+echo.
+pause
+goto btncombos
+
+:cmbvivo
+cls
+call :c 05 "   VIVO / iQOO"
+echo.
+echo.
+call :prc "RECOVERY" "Vol+ + Power"
+call :prc "FASTBOOT" "Vol- + Power (segun modelo)"
+call :prc "APAGADO FORZADO" "Power ~12 seg"
+echo.
+pause
+goto btncombos
+
+:cmbmtk
+cls
+call :c 05 "   MEDIATEK (Tecno / Infinix / itel)"
+echo.
+echo.
+call :prc "RECOVERY" "Vol+ + Power"
+call :prc "MODO BROM (flasheo)" "equipo apagado: manten Vol- (o Vol+) y conecta el USB"
+call :prc "APAGADO FORZADO" "Power ~10 seg"
+echo.
+pause
+goto btncombos
+
+:cmbpix
+cls
+call :c 05 "   GOOGLE PIXEL  /  LG"
+echo.
+echo.
+call :prc "PIXEL - FASTBOOT" "Vol- + Power"
+call :prc "PIXEL - RECOVERY" "entra a Fastboot y selecciona Recovery con Vol/Power"
+call :prc "LG - RECOVERY" "Vol- + Power; al logo suelta Power y vuelve a presionarlo"
+call :prc "LG - DOWNLOAD" "Vol+ y conecta el USB al PC"
+echo.
+pause
+goto btncombos
+
+:utilmenu
+cls
+echo.
+call :c 05 "     UTILIDADES RAPIDAS ADB"
+echo.
+echo.
+call :c 0E "   [1] "&call :c 06 "ACTIVAR ADB INALAMBRICO (WiFi)"
+echo.
+call :c 0E "   [2] "&call :c 06 "CAPTURA DE PANTALLA AL PC"
+echo.
+call :c 0E "   [0] "&call :c 06 "VOLVER"
+echo.
+echo.
+set "u="
+set /p "u=  ╚═════►  SELECCIONE UNA OPCION: "
+if "%u%"=="1" goto adbwifi
+if "%u%"=="2" goto scrshot
+if "%u%"=="0" goto toolsadb
+goto utilmenu
+
+:adbwifi
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+echo.
+call :c 0E "  Buscando la IP del equipo en WiFi (debe estar en la misma red que el PC)..."
+echo.
+set "DIP="
+for /f "tokens=9" %%a in ('adb %ADBSEL% shell ip route 2^>nul ^| findstr wlan0') do set "DIP=%%a"
+if not defined DIP (
+	call :c 0C "  No pude leer la IP WiFi. Conecta el equipo a WiFi y reintenta,"
+	echo.
+	call :c 0C "  o mira la IP en Ajustes - Acerca del telefono - Estado."
+	echo.
+	pause
+	goto utilmenu
+)
+call :c 0E "  IP detectada: "&call :c 06 "%DIP%"
+echo.
+adb %ADBSEL% tcpip 5555 >nul 2>&1
+echo.
+call :c 0E "  Conectando por WiFi..."
+echo.
+adb connect %DIP%:5555
+echo.
+call :c 0A "  Si dice 'connected', ya puedes DESCONECTAR el cable USB."
+echo.
+pause
+goto utilmenu
+
+:scrshot
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "TS=%date:~-4%-%date:~3,2%-%date:~0,2%_%time:~0,2%%time:~3,2%"
+set "TS=%TS: =0%"
+set "CAPDIR=%~dp0CAPTURAS"
+mkdir "%CAPDIR%" 2>nul
+set "SF=%CAPDIR%\shot_%SERIAL%_%TS%.png"
+echo.
+call :c 0E "  Tomando captura..."
+echo.
+adb %ADBSEL% exec-out screencap -p > "%SF%"
+echo.
+call :c 0A "  GUARDADA EN: "&echo %SF%
+echo.
+start "" "%SF%"
+pause
+goto utilmenu
+
 :nodevadb
 echo.
 call :c 0C "  CONECTA EL DISPOSITIVO EN MODO ADB (Depuracion USB activada)"
@@ -2295,6 +2515,21 @@ setlocal EnableDelayedExpansion
 set "val=!%~1!"
 set "val=!val: =!"
 endlocal & set "%~1=%val%"
+exit /b
+
+:toolcheck
+setlocal EnableDelayedExpansion
+set "MISS="
+for %%f in ("adb.exe" "fastboot.exe" "7za.exe" "scrcpy\scrcpy.exe") do if not exist "%~dp0%%~f" set "MISS=!MISS! %%~f"
+if defined MISS (
+	color 0C
+	echo.
+	echo   ADVERTENCIA: faltan archivos del paquete:!MISS!
+	echo   Algunas opciones no funcionaran. Descarga el paquete completo.
+	echo.
+	pause
+)
+endlocal
 exit /b
 
 :estado
