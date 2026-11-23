@@ -9,6 +9,17 @@ drivers, firmware y utilidades varias.
    para las opciones que lo requieran).
 2. Elige una opción del menú escribiendo su número.
 
+## Novedades (Fase 6: más marcas en OTA)
+
+### Opción 11 — OTA UPDATES (multi-marca)
+Ahora detecta la marca y desactiva las apps de actualización OTA de:
+- **Samsung, Xiaomi/Redmi/POCO, Oppo** (ya estaban)
+- **Vivo / iQOO**, **Realme**, **OnePlus**, **Transsion (Tecno / Infinix / itel)** (nuevas)
+
+Usa `pm disable-user --user 0` (reversible con `pm enable`), probando una lista de paquetes conocidos por marca. Los paquetes que no existan en el equipo se omiten sin error, y el menú indica cuáles desactivó.
+
+> Nota: estos nombres de paquete son los habituales por marca, pero pueden variar según el modelo y la versión. Si una marca saca una versión nueva, puede que no coincida; en ese caso úsalo junto al debloat manual (opción 14 → 6 → 4).
+
 ## Novedades (Fase 5: firmware Samsung oficial)
 
 ### Opción 14 → 8 — FIRMWARE SAMSUNG (descarga oficial)

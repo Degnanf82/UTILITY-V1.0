@@ -28,7 +28,7 @@ echo  ██║░░░░░[2: ENABLE UNSIGNED DRIVERS]░░░░░░░�
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░[3: ACTIVADOR IDM]░░░░░░░░░░░░░░░░░░[10: CONTACTO]░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
-echo  ██║░░░░░[4: ACTIVADOR MICROSOFT]░░░░░░░░░░░░[11: OTA UPDATES SAMS/OPPO/MI (ADB)]░██║
+echo  ██║░░░░░[4: ACTIVADOR MICROSOFT]░░░░░░░░░░░░[11: OTA UPDATES (MULTI-MARCA) (ADB)]██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
 echo  ██║░░░░░[5: WINDOWS DEFENDER REMOVE]░░░░░░░░[12: ENABLE ADB SAMSUNG (MTP)(old)]░░██║
 echo  ██║░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██║
@@ -340,13 +340,23 @@ goto:op10
 :op11
 echo.
 	call :c 0E " ══════════► PROCESO		: "
-    call :c 0C "DISABLE UPDATES SAMSUNG - OPPO - MI"
+    call :c 0C "DISABLE UPDATES (MULTI-MARCA)"
 	echo.
 	echo.
 		call :adbreadinfo
-			if "%brand%"=="samsung" (goto up1) else (
-			if "%brand%"=="OPPO" (goto up2) else (
-			if "%brand%"=="Xiaomi" (goto up3) else (goto up0)))
+			if /I "%brand%"=="samsung" goto up1
+			if /I "%brand%"=="OPPO" goto up2
+			if /I "%brand%"=="Xiaomi" goto up3
+			if /I "%brand%"=="Redmi" goto up3
+			if /I "%brand%"=="POCO" goto up3
+			if /I "%brand%"=="vivo" goto up4
+			if /I "%brand%"=="iQOO" goto up4
+			if /I "%brand%"=="realme" goto up5
+			if /I "%brand%"=="OnePlus" goto up6
+			if /I "%brand%"=="TECNO" goto up7
+			if /I "%brand%"=="Infinix" goto up7
+			if /I "%brand%"=="itel" goto up7
+			goto up0
 		:up1
 		echo.
 		call :c 0E " ══════════► DESACTIVANDO UPDATES	: "
@@ -381,6 +391,50 @@ goto:inicio
     pause
 goto:inicio
 
+		:up4
+		echo.
+		call :c 0E " ══════════► VIVO / iQOO - DESACTIVANDO OTA :"
+		echo.
+		for %%p in (com.vivo.upgrade com.bbk.updater com.vivo.updater com.vivo.fulldownload) do call :otatry %%p
+		echo.
+		call :c 0A "LISTO (los paquetes que no existan se omiten)"
+    echo.
+    pause
+goto:inicio
+
+		:up5
+		echo.
+		call :c 0E " ══════════► REALME - DESACTIVANDO OTA :"
+		echo.
+		for %%p in (com.oppo.ota com.coloros.ota com.oplus.ota) do call :otatry %%p
+		echo.
+		call :c 0A "LISTO (los paquetes que no existan se omiten)"
+    echo.
+    pause
+goto:inicio
+
+		:up6
+		echo.
+		call :c 0E " ══════════► ONEPLUS - DESACTIVANDO OTA :"
+		echo.
+		for %%p in (com.oneplus.ota com.oplus.ota) do call :otatry %%p
+		echo.
+		call :c 0A "LISTO (los paquetes que no existan se omiten)"
+    echo.
+    pause
+goto:inicio
+
+		:up7
+		echo.
+		call :c 0E " ══════════► TRANSSION (TECNO/INFINIX/ITEL) - DESACTIVANDO OTA :"
+		echo.
+		for %%p in (com.transsion.systemupdate com.transsion.updater com.gold.fota com.fota.wirelessupdate) do call :otatry %%p
+		echo.
+		call :c 0A "LISTO (los paquetes que no existan se omiten)"
+    echo.
+    pause
+goto:inicio
+
         :up0
 		echo.
 		call :c 0E " ══════════► DESACTIVANDO		: "
@@ -392,6 +446,14 @@ goto:inicio
 	echo.
     pause
 goto:inicio
+
+:otatry
+set "P=%~1"
+set "R="
+for /f "delims=" %%r in ('adb shell pm disable-user --user 0 %P% 2^>^&1') do set "R=%%r"
+echo %R% | find /i "disabled" >nul
+if errorlevel 1 (echo    %P% : no aplicable) else (call :c 0A "    %P% : desactivado" & echo.)
+exit /b
 
 
 :op12
