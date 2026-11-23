@@ -1,0 +1,15 @@
+%TF.GenerationSoftware,multimetro-pcb,script,1.0*%
+%TF.FileFunction,Profile,NP*%
+%TF.FilePolarity,Positive*%
+%FSLAX46Y46*%
+%MOMM*%
+%LPD*%
+G01*
+%ADD10C,0.1000*%
+D10*
+X0Y100000000D02*
+X84000000Y100000000D01*
+X84000000Y0D01*
+X0Y0D01*
+X0Y100000000D01*
+M02*

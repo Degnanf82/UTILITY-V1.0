@@ -1,0 +1,25 @@
+Cantidad,Componente,Valor,Referencias
+1,Bornera 2 pines paso 5.08 mm,PUNTAS,J3
+1,Buzzer ACTIVO 5 V 12 mm,BUZZER,BZ1
+1,Capacitor ceramico (paso 2.5 mm),104,C1
+2,Diodo DO-35,1N4148,D1 D2
+6,Diodo DO-35,BAT85,D3 D4 D5 D6 D7 D8
+1,Diodo zener DO-41 1 W,1N4729A,DZ1
+1,PTC / polyfuse radial (paso 5 mm),PTC 50mA,RT1
+1,Portafusible de clip 5x20 mm (par) + fusible rapido,315mA,F1
+1,Pulsador 6x6 mm,HOLD,SW2
+1,Pulsador 6x6 mm,MODO,SW1
+1,Pulsador 6x6 mm,REL,SW3
+1,Rele 5 V SPDT,SRD-05VDC (Ohm),K1
+1,Rele 5 V SPDT,SRD-05VDC (mA),K2
+1,Resistencia 1 W 1 % (shunt),1R 1W,RSH
+3,Resistencia 1/4 W 1 %,100k,R6 R7 R10
+5,Resistencia 1/4 W 1 %,10k,R2 R4 R9 R15 R16
+2,Resistencia 1/4 W 1 %,1M,R5 R11
+6,Resistencia 1/4 W 1 %,1k,R1 R3 R18 R8 R14 R13
+1,Resistencia 1/4 W 1 %,220,R12
+1,Resistencia 1/4 W 1 %,33k,R17
+1,Tira de pines HEMBRA 1x10 2.54 mm (ADS1115),,U2
+1,Tira de pines HEMBRA 1x4 2.54 mm (OLED 0.96 opcional),,U3
+2,Tira de pines HEMBRA 1x8 2.54 mm (ESP32-C3),,U1L U1R
+3,Transistor NPN TO-92,S9014,Q1 Q2 Q3
