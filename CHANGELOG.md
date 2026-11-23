@@ -7,6 +7,17 @@ Formato por versiones. El menú principal y el submenú **Herramientas ADB/FASTB
 
 ## V1.2 — 2026-11-23
 
+### Combinaciones de botones, utilidades rápidas y auto-chequeo
+- Opción **14 → D**: combinaciones de botones físicos por marca para entrar a
+  Recovery / Download / Fastboot / BROM (Samsung, Xiaomi, Motorola, Huawei/Honor,
+  Oppo/Realme/OnePlus, Vivo, MediaTek, Pixel/LG). Útil cuando no hay ADB.
+- Opción **14 → E**: utilidades rápidas ADB:
+  - **ADB inalámbrico**: detecta la IP WiFi del equipo, hace `adb tcpip 5555` y
+    `adb connect`, para trabajar sin cable.
+  - **Captura de pantalla al PC** (`exec-out screencap`) a `CAPTURAS\`.
+- **Auto-chequeo al inicio** (`:toolcheck`): avisa si falta adb, fastboot, 7za
+  o scrcpy antes de usar el menú.
+
 ### Códigos de prueba / diagnóstico por marca
 - Opción **14 → C**: pantalla de referencia con los códigos de diagnóstico de
   fábrica (que se marcan en el teléfono) por marca: Universal, Samsung, Xiaomi/
