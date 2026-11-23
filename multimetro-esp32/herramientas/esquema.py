@@ -142,7 +142,7 @@ def driver(relay, drvnet, qref):
     vcc(relay.in1, "+5V", 0.4)
     l = d.add(elm.Line().at(relay.in2).down(0.8))           # nodo del colector
     q = d.add(elm.BjtNpn(circle=True).right().at((x, l.end[1] - 0.6)).anchor("collector")
-              .label(qref + "\nS8050", loc="right", fontsize=8.5))
+              .label(qref + "\nS9014", loc="right", fontsize=8.5))
     d.add(elm.Line().at(l.end).to(q.collector))
     dx = x - 1.0
     d.add(elm.Line().at(l.end).to((dx, l.end[1]))); d.add(elm.Dot().at(l.end))
@@ -226,7 +226,7 @@ btn(52.0, "33 kΩ", "SW3\nREL")
 sp = d.add(elm.Speaker().right().at((59.6, 12.2)).label("BZ1 buzzer activo 5V", loc="bot", fontsize=8.5))
 d.add(elm.Line().at(sp.in1).left(0.4)); vcc((sp.in1[0] - 0.4, sp.in1[1]), "+5V", 0.6)
 d.add(elm.Line().at(sp.in2).left(0.9))
-q3 = d.add(elm.BjtNpn(circle=True).right().at((sp.in2[0] - 0.9, sp.in2[1] - 1.0)).anchor("collector").label("Q3\nS8050", loc="right", fontsize=8.5))
+q3 = d.add(elm.BjtNpn(circle=True).right().at((sp.in2[0] - 0.9, sp.in2[1] - 1.0)).anchor("collector").label("Q3\nS9014", loc="right", fontsize=8.5))
 d.add(elm.Line().at((sp.in2[0] - 0.9, sp.in2[1])).to(q3.collector))
 gnd(q3.emitter, 0.2)
 rb = d.add(elm.Resistor().at(q3.base).left(1.8).label(ref("R") + " 1k", loc="top", fontsize=8))
