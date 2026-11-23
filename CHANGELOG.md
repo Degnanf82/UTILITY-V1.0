@@ -7,6 +7,13 @@ Formato por versiones. El menú principal y el submenú **Herramientas ADB/FASTB
 
 ## V1.2 — 2026-11-23
 
+### Guía de cuenta / FRP por proceso oficial
+- Opción **14 → 9**: pantalla que guía el **camino legítimo** cuando un cliente
+  trae un equipo bloqueado por cuenta Google / FRP: exige prueba de propiedad,
+  deriva a los canales oficiales de recuperación (Google, Samsung, Xiaomi,
+  Huawei) y al operador para candado de red, y propone reinstalar firmware
+  oficial como servicio cobrable. **No salta ni evade el FRP.**
+
 ### Correcciones
 - Rutinas de lectura por fastboot (`:fastbootreadmiqcom`, `:fastbootreadmotoqcom`):
   eliminado un paréntesis `)` de más que dejaba los bloques `if/else`

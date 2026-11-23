@@ -520,6 +520,8 @@ call :c 0E "   [7] "&call :c 06 "RECUPERACION DE EQUIPO (fastboot, firmware ofic
 echo.
 call :c 0E "   [8] "&call :c 06 "FIRMWARE SAMSUNG (descarga oficial - samloader)"
 echo.
+call :c 0E "   [9] "&call :c 06 "CUENTA / FRP - PROCESO OFICIAL (guia)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -533,6 +535,7 @@ if "%t%"=="5" goto backupmenu
 if "%t%"=="6" goto debloatmenu
 if "%t%"=="7" goto brickmenu
 if "%t%"=="8" goto samfwmenu
+if "%t%"=="9" goto frpoficial
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -1161,6 +1164,55 @@ call :c 0A "  PROCESO TERMINADO. Revisa la carpeta y la salida de arriba."
 echo.
 pause
 goto samfwmenu
+
+:frpoficial
+cls
+echo.
+call :c 05 "     CUENTA GOOGLE / FRP  -  PROCESO OFICIAL     "
+echo.
+echo.
+call :c 0C "  Esta herramienta NO salta el FRP ni la cuenta Google."
+echo.
+call :c 0C "  El FRP protege contra robo: saltarlo sin ser el dueno es ilegal"
+echo.
+call :c 0C "  y pone en riesgo tu taller. Aqui esta el camino correcto y cobrable."
+echo.
+echo.
+call :c 0E "  1) PIDE PRUEBA DE PROPIEDAD AL CLIENTE:"
+echo.
+call :c 06 "     factura o ticket de compra, o caja con el IMEI que coincide."
+echo.
+call :c 06 "     Si no puede probar que es suyo, no continues: puede ser robado."
+echo.
+echo.
+call :c 0E "  2) RECUPERAR LA CUENTA (lo hace el cliente, con su prueba):"
+echo.
+call :c 06 "     - Google: google.com/accounts/recovery"
+echo.
+call :c 06 "     - Samsung: account.samsung.com (Buscar mi movil / reset remoto)"
+echo.
+call :c 06 "     - Xiaomi: account.xiaomi.com   Mi/Redmi account"
+echo.
+call :c 06 "     - Huawei: id.huawei.com"
+echo.
+echo.
+call :c 0E "  3) SI ES EQUIPO DE OPERADOR CON CANDADO DE RED:"
+echo.
+call :c 06 "     el operador entrega el codigo/libera cuando el equipo esta pagado."
+echo.
+echo.
+call :c 0E "  4) ALTERNATIVA LIMPIA QUE SI PUEDES OFRECER:"
+echo.
+call :c 06 "     reinstalar firmware OFICIAL (opcion 7 u 8). No quita el FRP, pero"
+echo.
+call :c 06 "     revive el equipo y es un servicio cobrable y legitimo."
+echo.
+echo.
+call :c 04 "  Documenta siempre la prueba de propiedad: te protege a ti."
+echo.
+echo.
+pause
+goto toolsadb
 
 :nodevadb
 echo.
