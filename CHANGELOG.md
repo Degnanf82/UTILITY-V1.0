@@ -7,6 +7,13 @@ Formato por versiones. El menú principal y el submenú **Herramientas ADB/FASTB
 
 ## V1.2 — 2026-11-23
 
+### Diagnóstico de batería
+- Opción **14 → B**: lee `dumpsys battery` y, si el equipo lo expone, la
+  capacidad de diseño vs actual y los ciclos (`/sys/class/power_supply`).
+  Muestra nivel, estado, salud, temperatura, voltaje, tecnología y una
+  **salud estimada %** (actual/diseño); avisa si baja de 80 %. Guarda
+  `BATERIA_<serial>.txt`. Sin root; los datos que el equipo no exponga quedan vacíos.
+
 ### scrcpy mejorado y respaldo de datos del cliente
 - Opción **7** (menú principal) ahora es un submenú de scrcpy 2.1.1: espejo
   normal, espejo optimizado (pantalla del tel. apagada + despierto), **grabar

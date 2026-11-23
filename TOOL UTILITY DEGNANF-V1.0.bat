@@ -560,6 +560,8 @@ call :c 0E "   [8] "&call :c 06 "FIRMWARE SAMSUNG (descarga oficial - samloader)
 echo.
 call :c 0E "   [9] "&call :c 06 "CUENTA / FRP - PROCESO OFICIAL (guia)"
 echo.
+call :c 0E "   [B] "&call :c 06 "DIAGNOSTICO DE BATERIA (salud / ciclos / temp)"
+echo.
 call :c 0E "   [0] "&call :c 06 "VOLVER AL INICIO"
 echo.
 echo.
@@ -574,6 +576,7 @@ if "%t%"=="6" goto debloatmenu
 if "%t%"=="7" goto brickmenu
 if "%t%"=="8" goto samfwmenu
 if "%t%"=="9" goto frpoficial
+if /I "%t%"=="B" goto battdiag
 if "%t%"=="0" goto inicio
 goto toolsadb
 
@@ -1401,6 +1404,70 @@ echo.
 pause
 goto toolsadb
 
+:battdiag
+cls
+call :estado
+if /I not "%DEVSTATE%"=="ADB" goto nodevadb
+call :pickdevice
+if errorlevel 1 goto nodevadb
+set "bl=" & for /f "tokens=2 delims=:" %%a in ('adb %ADBSEL% shell dumpsys battery ^| findstr /i /c:"level:"') do set "bl=%%a"
+set "bs=" & for /f "tokens=2 delims=:" %%a in ('adb %ADBSEL% shell dumpsys battery ^| findstr /i /c:"status:"') do set "bs=%%a"
+set "bh=" & for /f "tokens=2 delims=:" %%a in ('adb %ADBSEL% shell dumpsys battery ^| findstr /i /c:"health:"') do set "bh=%%a"
+set "bt=" & for /f "tokens=2 delims=:" %%a in ('adb %ADBSEL% shell dumpsys battery ^| findstr /i /c:"temperature:"') do set "bt=%%a"
+set "bv=" & for /f "tokens=2 delims=:" %%a in ('adb %ADBSEL% shell dumpsys battery ^| findstr /i /c:"voltage:"') do set "bv=%%a"
+set "btec=" & for /f "tokens=2 delims=:" %%a in ('adb %ADBSEL% shell dumpsys battery ^| findstr /i /c:"technology:"') do set "btec=%%a"
+set "cfd=" & for /f "delims=" %%a in ('adb %ADBSEL% shell "cat /sys/class/power_supply/battery/charge_full_design 2^>/dev/null"') do set "cfd=%%a"
+set "cf=" & for /f "delims=" %%a in ('adb %ADBSEL% shell "cat /sys/class/power_supply/battery/charge_full 2^>/dev/null"') do set "cf=%%a"
+set "cyc=" & for /f "delims=" %%a in ('adb %ADBSEL% shell "cat /sys/class/power_supply/battery/cycle_count 2^>/dev/null"') do set "cyc=%%a"
+rem limpiar espacios de cada variable capturada
+for %%v in (bl bs bh bt bv btec cfd cf cyc) do call :stripvar %%v
+rem traducir codigos
+set "bstxt=%bs%"
+if "%bs%"=="2" set "bstxt=Cargando"
+if "%bs%"=="3" set "bstxt=Descargando"
+if "%bs%"=="4" set "bstxt=No carga"
+if "%bs%"=="5" set "bstxt=Llena"
+set "bhtxt=%bh%"
+if "%bh%"=="2" set "bhtxt=BUENA"
+if "%bh%"=="3" set "bhtxt=SOBRECALENTADA"
+if "%bh%"=="4" set "bhtxt=MUERTA"
+if "%bh%"=="5" set "bhtxt=SOBREVOLTAJE"
+if "%bh%"=="6" set "bhtxt=FALLA"
+if "%bh%"=="7" set "bhtxt=FRIA"
+set "tempc=?"
+set /a "tent=bt/10" >nul 2>&1
+set /a "tdec=bt-tent*10" >nul 2>&1
+if defined bt set "tempc=%tent%.%tdec% C"
+set "salud=?"
+if defined cfd if defined cf if not "%cfd%"=="0" set /a "salud=cf*100/cfd" >nul 2>&1
+set "RPT=%~dp0BATERIA_%SERIAL%.txt"
+(
+echo ============== DIAGNOSTICO DE BATERIA ==============
+echo Fecha        : %date% %time%
+echo Serial       : %SERIAL%
+echo Nivel actual : %bl%%%
+echo Estado       : %bstxt%
+echo Salud [SO]   : %bhtxt%
+echo Temperatura  : %tempc%
+echo Voltaje      : %bv% mV
+echo Tecnologia   : %btec%
+echo Cap. diseno  : %cfd% uAh
+echo Cap. actual  : %cf% uAh
+echo Salud estim. : %salud%%% [actual/diseno]
+echo Ciclos       : %cyc%
+echo ===================================================
+echo Nota: la salud estimada y los ciclos dependen del equipo; algunos no
+echo los exponen sin root y apareceran vacios.
+) > "%RPT%"
+type "%RPT%"
+echo.
+if not "%salud%"=="?" if %salud% LSS 80 call :c 0C "  Salud por debajo de 80%%: considera cambio de bateria."
+echo.
+call :c 0A "  GUARDADO EN: "&echo %RPT%
+echo.
+pause
+goto toolsadb
+
 :nodevadb
 echo.
 call :c 0C "  CONECTA EL DISPOSITIVO EN MODO ADB (Depuracion USB activada)"
@@ -2043,6 +2110,13 @@ goto:inicio
 :loadconfig
 if not exist "%~dp0config.ini" exit /b
 for /f "usebackq eol=# tokens=1,* delims==" %%a in ("%~dp0config.ini") do set "%%a=%%b"
+exit /b
+
+:stripvar
+setlocal EnableDelayedExpansion
+set "val=!%~1!"
+set "val=!val: =!"
+endlocal & set "%~1=%val%"
 exit /b
 
 :estado

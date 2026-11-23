@@ -2,5 +2,6 @@
 FIRMWARE/
 BACKUPS/
 REPORTE_*.txt
+BATERIA_*.txt
 debloat/log_*.txt
 GRABACIONES/
