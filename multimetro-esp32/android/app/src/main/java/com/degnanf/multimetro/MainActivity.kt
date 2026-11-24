@@ -159,8 +159,9 @@ class MainActivity : Activity(), LinkListener {
         screen.addView(stats)
         root.addView(screen, lp(top = 8))
 
-        graph = GraphView(this)
-        root.addView(graph, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(110)).apply {
+        // La grafica ocupa todo el espacio libre de la pantalla (minimo 110 dp)
+        graph = GraphView(this).apply { minimumHeight = px(110) }
+        root.addView(graph, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply {
             topMargin = px(8)
         })
 
@@ -190,7 +191,11 @@ class MainActivity : Activity(), LinkListener {
             12f, Pal.active
         ).apply { setPadding(0, px(12), 0, 0) })
 
-        return ScrollView(this).apply { addView(root) }
+        return ScrollView(this).apply {
+            isFillViewport = true
+            setBackgroundColor(Pal.bg)
+            addView(root, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        }
     }
 
     private fun px(v: Int) = (v * dp).toInt()

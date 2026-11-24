@@ -19,17 +19,19 @@ import kotlin.math.sin
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [34], qualifiers = "w400dp-h860dp-xhdpi")
+@Config(sdk = [34], qualifiers = "w360dp-h740dp-xhdpi")
 class CapturasTest {
 
     private fun capture(name: String, feed: (MainActivity) -> Unit) {
         val act = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         feed(act)
         val content = act.findViewById<ViewGroup>(android.R.id.content).getChildAt(0) as ViewGroup
-        val inner = content.getChildAt(0)
+        // Se mide como la pantalla real del telefono (alto fijo), para ver que no sobra espacio
+        val inner = content
         val w = act.resources.displayMetrics.widthPixels
+        val h = act.resources.displayMetrics.heightPixels
         inner.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+            View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
         inner.layout(0, 0, inner.measuredWidth, inner.measuredHeight)
         val bmp = Bitmap.createBitmap(inner.measuredWidth, inner.measuredHeight, Bitmap.Config.ARGB_8888)
         inner.draw(Canvas(bmp))
