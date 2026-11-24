@@ -97,6 +97,7 @@ class MainActivity : Activity(), LinkListener {
     private lateinit var flags: TextView
     private lateinit var stats: TextView
     private lateinit var graph: GraphView
+    private lateinit var btnConn: Button
     private lateinit var btnHold: Button
     private lateinit var btnRel: Button
     private lateinit var btnRec: Button
@@ -127,12 +128,13 @@ class MainActivity : Activity(), LinkListener {
         }
 
         status = text("Desconectado", 13f, Pal.muted).apply { maxLines = 2 }
-        root.addView(status)
-        root.addView(grid(3, listOf(
-            button("Bluetooth") { connectBle() },
-            button("WiFi") { connectWifiDialog() },
-            button("Desconectar") { disconnect() },
-        )), lp(top = 6))
+        btnConn = button("Conectar") { if (connected) disconnect() else chooseConnection() }
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(status, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(btnConn, LinearLayout.LayoutParams(px(118), px(38)).apply { leftMargin = px(8) })
+        })
 
         // Pantalla
         val screen = LinearLayout(this).apply {
@@ -158,14 +160,14 @@ class MainActivity : Activity(), LinkListener {
         root.addView(screen, lp(top = 8))
 
         graph = GraphView(this)
-        root.addView(graph, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(170)).apply {
+        root.addView(graph, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(130)).apply {
             topMargin = px(8)
         })
 
         // Funciones: 4 columnas, mismo tamano
         root.addView(section("Función"))
         val tiles = modes.map { m -> modeTile(m).also { modeButtons[m.code] = it } }
-        root.addView(grid(4, tiles, height = 66))
+        root.addView(grid(4, tiles, height = 52))
 
         // Medicion
         root.addView(section("Medición"))
@@ -173,17 +175,24 @@ class MainActivity : Activity(), LinkListener {
         btnRel = button("REL") { sendCmd("REL") }
         root.addView(grid(3, listOf(btnHold, btnRel, button("Borrar mín/máx") { sendCmd("RESET"); graph.clear() })))
 
-        // Registro CSV
-        root.addView(section("Registro"))
+        // Opciones menos usadas: ocultas detras de un solo boton
+        val more = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
+        val btnMore = button("Más opciones ▾") {}
+        btnMore.setOnClickListener {
+            val show = more.visibility != View.VISIBLE
+            more.visibility = if (show) View.VISIBLE else View.GONE
+            btnMore.text = if (show) "Menos opciones ▴" else "Más opciones ▾"
+        }
+        root.addView(grid(1, listOf(btnMore), height = 36), lp(top = 8))
+        more.addView(section("Registro"))
         btnRec = button("Grabar") { toggleRecording() }
         recInfo = text("0 muestras", 13f, Pal.muted).apply { gravity = Gravity.CENTER }
-        root.addView(grid(3, listOf(btnRec, button("Guardar CSV") { saveCsv() }, recInfo)))
-
-        // Ajustes
-        root.addView(section("Ajustes"))
-        root.addView(grid(2, listOf(button("Calibrar") { calibrateDialog() }, button("Info equipo") { infoDialog() })))
-        root.addView(switchRow("Pitido de continuidad en el teléfono") { phoneBeep = it }, lp(top = 6))
-        root.addView(switchRow("Buzzer del multímetro") { sendCmd("BEEP ${if (it) 1 else 0}") })
+        more.addView(grid(3, listOf(btnRec, button("Guardar CSV") { saveCsv() }, recInfo)))
+        more.addView(section("Ajustes"))
+        more.addView(grid(2, listOf(button("Calibrar") { calibrateDialog() }, button("Info equipo") { infoDialog() })))
+        more.addView(switchRow("Pitido de continuidad en el teléfono") { phoneBeep = it }, lp(top = 4))
+        more.addView(switchRow("Buzzer del multímetro") { sendCmd("BEEP ${if (it) 1 else 0}") })
+        root.addView(more)
         root.addView(text(
             "Seguridad: solo baja tensión DC (máx. 40 V, 300 mA). No medir la red eléctrica. " +
                 "Puntas: roja en VΩmA, negra en COM.",
@@ -221,7 +230,7 @@ class MainActivity : Activity(), LinkListener {
     private fun button(label: String, onClick: () -> Unit) = Button(this).apply {
         text = label
         isAllCaps = false
-        textSize = 14f
+        textSize = 13f
         maxLines = 1
         minWidth = 0; minimumWidth = 0; minHeight = 0; minimumHeight = 0
         setPadding(px(6), 0, px(6), 0)
@@ -234,22 +243,22 @@ class MainActivity : Activity(), LinkListener {
     private fun modeTile(m: ModeInfo): Button = button("") { selectMode(m.code) }.apply {
         maxLines = 2
         val sb = SpannableStringBuilder()
-        sb.append(m.symbol, AbsoluteSizeSpan(20, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.append(m.symbol, AbsoluteSizeSpan(17, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         sb.setSpan(StyleSpan(Typeface.BOLD), 0, m.symbol.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         sb.append("\n")
-        sb.append(m.caption, AbsoluteSizeSpan(11, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.append(m.caption, AbsoluteSizeSpan(10, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         text = sb
         setLineSpacing(0f, 0.95f)
     }
 
     /** Filas de columnas iguales; celdas vacias al final para que todo quede alineado. */
-    private fun grid(cols: Int, items: List<View>, height: Int = 48): LinearLayout {
+    private fun grid(cols: Int, items: List<View>, height: Int = 40): LinearLayout {
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         items.chunked(cols).forEach { chunk ->
             val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false }
             for (i in 0 until cols) {
                 val v = chunk.getOrNull(i) ?: View(this)
-                r.addView(v, LinearLayout.LayoutParams(0, px(height), 1f).apply { setMargins(px(3), px(3), px(3), px(3)) })
+                r.addView(v, LinearLayout.LayoutParams(0, px(height), 1f).apply { setMargins(px(2), px(2), px(2), px(2)) })
             }
             box.addView(r)
         }
@@ -258,7 +267,7 @@ class MainActivity : Activity(), LinkListener {
 
     private fun section(title: String) = text(title.uppercase(), 11f, Pal.muted).apply {
         letterSpacing = 0.12f
-        setPadding(px(4), px(14), 0, px(2))
+        setPadding(px(4), px(10), 0, px(2))
     }
 
     private fun switchRow(label: String, onChange: (Boolean) -> Unit) = Switch(this).apply {
@@ -295,6 +304,7 @@ class MainActivity : Activity(), LinkListener {
     }
 
     private fun disconnect() {
+        if (::btnConn.isInitialized) btnConn.text = "Conectar"
         link?.close()
         link = null
         connected = false
@@ -312,6 +322,16 @@ class MainActivity : Activity(), LinkListener {
     override fun onState(text: String, connected: Boolean) {
         this.connected = connected
         status.text = text
+        btnConn.text = if (connected) "Desconectar" else "Conectar"
+    }
+
+    /** Un solo boton de conexion: pregunta Bluetooth o WiFi. */
+    private fun chooseConnection() {
+        AlertDialog.Builder(this)
+            .setTitle("Conectar el multímetro")
+            .setItems(arrayOf("Bluetooth", "WiFi")) { _, which -> if (which == 0) connectBle() else connectWifiDialog() }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     override fun onLine(line: String) {
@@ -342,7 +362,7 @@ class MainActivity : Activity(), LinkListener {
 
         styleButton(btnHold, hold, Pal.active)
         styleButton(btnRel, rel, Pal.active)
-        flags.text = listOfNotNull(if (hold) "HOLD" else null, if (rel) "REL" else null).joinToString("  ")
+        flags.text = listOfNotNull(if (isRecording) "● REC" else null, if (hold) "HOLD" else null, if (rel) "REL" else null).joinToString("  ")
 
         when {
             ol -> {
