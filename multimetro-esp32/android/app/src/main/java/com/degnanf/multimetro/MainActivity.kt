@@ -52,13 +52,13 @@ class MainActivity : Activity(), LinkListener {
 
     // Cuadricula de 4 columnas x 2 filas (la ultima celda queda libre).
     private val modes = listOf(
-        ModeInfo("DCV", "Voltaje DC", "V", "Voltaje"),
-        ModeInfo("DCA", "Corriente mA", "mA", "Corriente"),
-        ModeInfo("OHM", "Resistencia", "Ω", "Resistencia"),
-        ModeInfo("CONT", "Continuidad", "•)))", "Continuidad"),
+        ModeInfo("DCV", "Voltaje DC", "V", "Volt"),
+        ModeInfo("DCA", "Corriente mA", "mA", "Corr"),
+        ModeInfo("OHM", "Resistencia", "Ω", "Res"),
+        ModeInfo("CONT", "Continuidad", "•)))", "Cont"),
         ModeInfo("DIODE", "Diodo", "▶|", "Diodo"),
-        ModeInfo("CAP", "Capacitor", "-||-", "Capacitor"),
-        ModeInfo("FREQ", "Frecuencia", "Hz", "Frecuencia"),
+        ModeInfo("CAP", "Capacitor", "-||-", "Cap"),
+        ModeInfo("FREQ", "Frecuencia", "Hz", "Frec"),
     )
 
     private object Pal {
@@ -133,7 +133,7 @@ class MainActivity : Activity(), LinkListener {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             addView(status, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(btnConn, LinearLayout.LayoutParams(px(118), px(38)).apply { leftMargin = px(8) })
+            addView(btnConn, LinearLayout.LayoutParams(px(104), px(32)).apply { leftMargin = px(8) })
         })
 
         // Pantalla
@@ -148,11 +148,11 @@ class MainActivity : Activity(), LinkListener {
             addView(modeLabel, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             addView(flags)
         })
-        value = text("----", 64f, Color.parseColor("#7CFC9A")).apply {
+        value = text("----", 56f, Color.parseColor("#7CFC9A")).apply {
             typeface = Typeface.MONOSPACE
             gravity = Gravity.END
         }
-        unit = text("", 26f, Color.parseColor("#7CFC9A")).apply { gravity = Gravity.END }
+        unit = text("", 22f, Color.parseColor("#7CFC9A")).apply { gravity = Gravity.END }
         stats = text("", 13f, Color.LTGRAY)
         screen.addView(value)
         screen.addView(unit)
@@ -160,14 +160,14 @@ class MainActivity : Activity(), LinkListener {
         root.addView(screen, lp(top = 8))
 
         graph = GraphView(this)
-        root.addView(graph, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(130)).apply {
+        root.addView(graph, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(110)).apply {
             topMargin = px(8)
         })
 
         // Funciones: 4 columnas, mismo tamano
         root.addView(section("Función"))
         val tiles = modes.map { m -> modeTile(m).also { modeButtons[m.code] = it } }
-        root.addView(grid(4, tiles, height = 52))
+        root.addView(grid(7, tiles, height = 42))
 
         // Medicion
         root.addView(section("Medición"))
@@ -175,24 +175,15 @@ class MainActivity : Activity(), LinkListener {
         btnRel = button("REL") { sendCmd("REL") }
         root.addView(grid(3, listOf(btnHold, btnRel, button("Borrar mín/máx") { sendCmd("RESET"); graph.clear() })))
 
-        // Opciones menos usadas: ocultas detras de un solo boton
-        val more = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
-        val btnMore = button("Más opciones ▾") {}
-        btnMore.setOnClickListener {
-            val show = more.visibility != View.VISIBLE
-            more.visibility = if (show) View.VISIBLE else View.GONE
-            btnMore.text = if (show) "Menos opciones ▴" else "Más opciones ▾"
-        }
-        root.addView(grid(1, listOf(btnMore), height = 36), lp(top = 8))
-        more.addView(section("Registro"))
+        // Registro y ajustes: siempre visibles, en una sola fila compacta
+        root.addView(section("Registro y ajustes"))
         btnRec = button("Grabar") { toggleRecording() }
-        recInfo = text("0 muestras", 13f, Pal.muted).apply { gravity = Gravity.CENTER }
-        more.addView(grid(3, listOf(btnRec, button("Guardar CSV") { saveCsv() }, recInfo)))
-        more.addView(section("Ajustes"))
-        more.addView(grid(2, listOf(button("Calibrar") { calibrateDialog() }, button("Info equipo") { infoDialog() })))
-        more.addView(switchRow("Pitido de continuidad en el teléfono") { phoneBeep = it }, lp(top = 4))
-        more.addView(switchRow("Buzzer del multímetro") { sendCmd("BEEP ${if (it) 1 else 0}") })
-        root.addView(more)
+        recInfo = text("0 muestras", 12f, Pal.muted).apply { gravity = Gravity.END }
+        root.addView(grid(4, listOf(btnRec, button("Guardar CSV") { saveCsv() },
+            button("Calibrar") { calibrateDialog() }, button("Info") { infoDialog() })))
+        root.addView(recInfo, lp(top = 2))
+        root.addView(switchRow("Pitido de continuidad en el teléfono") { phoneBeep = it })
+        root.addView(switchRow("Buzzer del multímetro") { sendCmd("BEEP ${if (it) 1 else 0}") })
         root.addView(text(
             "Seguridad: solo baja tensión DC (máx. 40 V, 300 mA). No medir la red eléctrica. " +
                 "Puntas: roja en VΩmA, negra en COM.",
@@ -213,7 +204,7 @@ class MainActivity : Activity(), LinkListener {
     }
 
     private fun shape(fill: Int, stroke: Int, width: Int = 1) = GradientDrawable().apply {
-        cornerRadius = 12 * dp
+        cornerRadius = 9 * dp
         setColor(fill)
         setStroke((width * dp).toInt().coerceAtLeast(1), stroke)
     }
@@ -230,10 +221,10 @@ class MainActivity : Activity(), LinkListener {
     private fun button(label: String, onClick: () -> Unit) = Button(this).apply {
         text = label
         isAllCaps = false
-        textSize = 13f
+        textSize = 12f
         maxLines = 1
         minWidth = 0; minimumWidth = 0; minHeight = 0; minimumHeight = 0
-        setPadding(px(6), 0, px(6), 0)
+        setPadding(px(2), 0, px(2), 0)
         stateListAnimator = null
         styleButton(this)
         setOnClickListener { onClick() }
@@ -243,16 +234,16 @@ class MainActivity : Activity(), LinkListener {
     private fun modeTile(m: ModeInfo): Button = button("") { selectMode(m.code) }.apply {
         maxLines = 2
         val sb = SpannableStringBuilder()
-        sb.append(m.symbol, AbsoluteSizeSpan(17, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.append(m.symbol, AbsoluteSizeSpan(14, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         sb.setSpan(StyleSpan(Typeface.BOLD), 0, m.symbol.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         sb.append("\n")
-        sb.append(m.caption, AbsoluteSizeSpan(10, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.append(m.caption, AbsoluteSizeSpan(9, true), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         text = sb
         setLineSpacing(0f, 0.95f)
     }
 
     /** Filas de columnas iguales; celdas vacias al final para que todo quede alineado. */
-    private fun grid(cols: Int, items: List<View>, height: Int = 40): LinearLayout {
+    private fun grid(cols: Int, items: List<View>, height: Int = 32): LinearLayout {
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         items.chunked(cols).forEach { chunk ->
             val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false }
@@ -267,18 +258,18 @@ class MainActivity : Activity(), LinkListener {
 
     private fun section(title: String) = text(title.uppercase(), 11f, Pal.muted).apply {
         letterSpacing = 0.12f
-        setPadding(px(4), px(10), 0, px(2))
+        setPadding(px(4), px(8), 0, px(1))
     }
 
     private fun switchRow(label: String, onChange: (Boolean) -> Unit) = Switch(this).apply {
         text = label
-        textSize = 14f
+        textSize = 13f
         setTextColor(Pal.text)
         isChecked = true
         val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
         thumbTintList = ColorStateList(states, intArrayOf(Pal.accent, Pal.muted))
         trackTintList = ColorStateList(states, intArrayOf(Color.parseColor("#806010"), Pal.btnPressed))
-        setPadding(px(4), px(8), px(4), px(8))
+        setPadding(px(4), px(2), px(4), px(2))
         setOnCheckedChangeListener { _, c -> onChange(c) }
     }
 
