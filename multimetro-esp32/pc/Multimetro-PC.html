@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multímetro DEGNANTECH</title>
+<style>
+:root {
+  --bg: #0B0E11; --card: #16202A; --btn: #232C36; --btn-h: #33404D; --stroke: #2E3A46;
+  --accent: #FFC107; --active: #FF8A65; --rec: #FF5252; --text: #E8EDF2; --muted: #8A97A3; --green: #7CFC9A;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.4 system-ui, "Segoe UI", Roboto, sans-serif;
+  display: flex; flex-direction: column;
+}
+header {
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+  border-bottom: 1px solid var(--stroke);
+}
+header .brand { font-weight: 700; letter-spacing: .08em; color: var(--accent); margin-right: auto; }
+header .brand span { color: var(--muted); font-weight: 400; letter-spacing: 0; margin-left: 8px; }
+#status { color: var(--muted); }
+button {
+  background: var(--btn); color: var(--text); border: 1px solid var(--stroke);
+  border-radius: 9px; padding: 7px 12px; font: 600 13px system-ui, "Segoe UI", sans-serif; cursor: pointer;
+}
+button:hover { background: var(--btn-h); }
+button:disabled { opacity: .45; cursor: default; }
+button.on { border-color: var(--active); color: var(--active); }
+button.sel { border: 2px solid var(--accent); color: var(--accent); }
+button.recon { border-color: var(--rec); color: var(--rec); }
+main {
+  flex: 1; min-height: 0; display: grid; gap: 12px; padding: 12px 16px 16px;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.card { background: var(--card); border-radius: 10px; padding: 14px 18px; }
+#screen { grid-column: 1; grid-row: 1; }
+#screen .top { display: flex; justify-content: space-between; }
+#modeLabel { color: var(--accent); font-size: 18px; }
+#flags { color: var(--active); font-weight: 600; }
+#readout { display: flex; align-items: baseline; justify-content: flex-end; gap: 14px; margin: 4px 0; }
+#value { font: 400 clamp(56px, 9vw, 120px)/1 ui-monospace, Consolas, monospace; color: var(--green); }
+#unit { font-size: clamp(24px, 3vw, 40px); color: var(--green); min-width: 2ch; }
+#stats { color: #C9D1D9; min-height: 1.4em; }
+#graphBox { grid-column: 1; grid-row: 2; padding: 8px; position: relative; min-height: 160px; background: #0F1418; }
+#graph { width: 100%; height: 100%; display: block; }
+aside { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+h3 { margin: 8px 0 2px; font-size: 11px; font-weight: 500; letter-spacing: .15em; color: var(--muted); text-transform: uppercase; }
+.grid { display: grid; gap: 6px; }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+.tile { padding: 6px 2px; line-height: 1.1; }
+.tile b { display: block; font-size: 17px; }
+.tile small { font-size: 10px; font-weight: 500; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0; }
+input[type=text] {
+  width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--stroke);
+  border-radius: 8px; padding: 7px 9px; font-size: 14px;
+}
+.small { font-size: 12px; color: var(--muted); }
+#calInfo, #infoBox { white-space: pre-line; font-size: 12px; color: #C9D1D9; }
+.warn { color: var(--active); font-size: 12px; margin-top: auto; padding-top: 8px; }
+#toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: #2B3642; color: var(--text); padding: 9px 16px; border-radius: 8px;
+  opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 90vw;
+}
+#toast.show { opacity: 1; }
+dialog { background: var(--card); color: var(--text); border: 1px solid var(--stroke); border-radius: 12px; max-width: 420px; }
+dialog::backdrop { background: #000a; }
+dialog .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+kbd { background: var(--btn); border: 1px solid var(--stroke); border-radius: 4px; padding: 0 5px; font-size: 11px; }
+@media (max-width: 820px) {
+  main { grid-template-columns: 1fr; grid-template-rows: auto 220px auto; }
+  aside { grid-column: 1; grid-row: 3; }
+  #graphBox { grid-row: 2; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">DEGNANTECH <span>Multímetro ESP32-C3 · PC</span></div>
+  <span id="status">Desconectado</span>
+  <button id="btnBle">Bluetooth</button>
+  <button id="btnUsb">Cable USB</button>
+  <button id="btnDemo" title="Datos simulados para probar la pantalla">Demo</button>
+  <button id="btnOff" hidden>Desconectar</button>
+</header>
+
+<main>
+  <section id="screen" class="card">
+    <div class="top"><span id="modeLabel">—</span><span id="flags"></span></div>
+    <div id="readout"><span id="value">----</span><span id="unit"></span></div>
+    <div id="stats"></div>
+  </section>
+
+  <section id="graphBox" class="card"><canvas id="graph"></canvas></section>
+
+  <aside class="card">
+    <h3>Función</h3>
+    <div class="grid g4" id="modes"></div>
+
+    <h3>Medición</h3>
+    <div class="grid g3">
+      <button id="btnHold" title="Tecla H">HOLD</button>
+      <button id="btnRel" title="Tecla R">REL</button>
+      <button id="btnReset">Borrar mín/máx</button>
+    </div>
+
+    <h3>Registro</h3>
+    <div class="grid g2">
+      <button id="btnRec">Grabar</button>
+      <button id="btnCsv">Guardar CSV</button>
+    </div>
+    <div class="small" id="recInfo">0 muestras</div>
+
+    <h3>Calibración</h3>
+    <div class="grid" style="grid-template-columns: 1fr auto">
+      <input type="text" id="calVal" placeholder="Valor real (5.00, 10k, 100n)">
+      <button id="btnCal">Calibrar</button>
+    </div>
+    <div class="small">Mide algo de valor conocido en la función a calibrar y escribe su valor real.</div>
+    <div id="calInfo"></div>
+    <div class="grid g2">
+      <button id="btnCalGet">Ver calibración</button>
+      <button id="btnCalReset">Restaurar fábrica</button>
+    </div>
+
+    <h3>Equipo</h3>
+    <div id="infoBox" class="small">Conecta el multímetro para ver sus datos.</div>
+    <label class="row"><span>Pitido de continuidad en la PC</span><input type="checkbox" id="pcBeep" checked></label>
+    <label class="row"><span>Buzzer del multímetro</span><input type="checkbox" id="devBeep" checked></label>
+    <div class="small">Teclas: <kbd>1</kbd>–<kbd>7</kbd> función · <kbd>H</kbd> hold · <kbd>R</kbd> rel</div>
+
+    <div class="warn">Seguridad: solo baja tensión DC (máx. 40 V, 300 mA). No medir la red eléctrica.
+      Puntas: roja en VΩmA, negra en COM.</div>
+  </aside>
+</main>
+
+<dialog id="dlgDca">
+  <h3 style="margin-top:0;color:var(--accent);font-size:15px;letter-spacing:0;text-transform:none">Medir corriente</h3>
+  <p>Coloca las puntas <b>EN SERIE</b> con el circuito: abre el circuito y pon el multímetro en medio.</p>
+  <p class="small">Máximo 300 mA (fusible de 315 mA). Nunca pongas las puntas directo sobre una fuente o batería en este modo.</p>
+  <div class="btns"><button id="dcaNo">Cancelar</button><button id="dcaYes">Entendido, medir</button></div>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+const NUS = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+const NUS_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // PC -> equipo
+const NUS_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // equipo -> PC
+
+const MODES = [
+  { code: "DCV",   label: "Voltaje DC",   sym: "V",    cap: "Volt" },
+  { code: "DCA",   label: "Corriente mA", sym: "mA",   cap: "Corr" },
+  { code: "OHM",   label: "Resistencia",  sym: "Ω",    cap: "Res" },
+  { code: "CONT",  label: "Continuidad",  sym: "•)))", cap: "Cont" },
+  { code: "DIODE", label: "Diodo",        sym: "▶|",   cap: "Diodo" },
+  { code: "CAP",   label: "Capacitor",    sym: "-||-", cap: "Cap" },
+  { code: "FREQ",  label: "Frecuencia",   sym: "Hz",   cap: "Frec" },
+];
+
+const $ = id => document.getElementById(id);
+const S = { link: null, mode: "", unit: "", rec: false, rows: [], info: null, lastBeep: 0 };
+
+// ---------------------------------------------------------------- formato
+const PREFIX = ["p", "n", "µ", "m", "", "k", "M"];
+const unitSym = u => u === "ohm" ? "Ω" : u;
+function si(v, u) {
+  let e = v !== 0 ? Math.floor(Math.log10(Math.abs(v)) / 3) : 0;
+  e = Math.max(-4, Math.min(2, e));
+  const m = v / Math.pow(1000, e), am = Math.abs(m);
+  const t = am < 9.9995 ? m.toFixed(3) : am < 99.995 ? m.toFixed(2) : m.toFixed(1);
+  return [t, PREFIX[e + 4] + unitSym(u)];
+}
+const siText = (v, u) => si(v, u).join(" ");
+function parseVal(s) {
+  s = s.trim().replace(",", ".").replace(/\s/g, "").replace(/(ohm|Ohm|[VvAΩFHz])+$/, "");
+  if (!s) return null;
+  const mult = { p: 1e-12, n: 1e-9, u: 1e-6, "µ": 1e-6, m: 1e-3, k: 1e3, K: 1e3, M: 1e6 }[s.slice(-1)];
+  if (mult) s = s.slice(0, -1);
+  const n = Number(s);
+  return isFinite(n) && s !== "" ? n * (mult || 1) : null;
+}
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+// ---------------------------------------------------------------- enlaces
+class LineBuffer {
+  constructor(onLine) { this.buf = ""; this.onLine = onLine; }
+  push(text) {
+    this.buf += text;
+    let i;
+    while ((i = this.buf.indexOf("\n")) >= 0) {
+      const line = this.buf.slice(0, i).trim();
+      this.buf = this.buf.slice(i + 1);
+      if (line) this.onLine(line);
+    }
+    if (this.buf.length > 4000) this.buf = "";
+  }
+}
+
+class BleLink {
+  async open() {
+    const dev = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: "Multimetro" }, { services: [NUS] }],
+      optionalServices: [NUS],
+    });
+    this.dev = dev;
+    this.name = dev.name || "Multímetro";
+    dev.addEventListener("gattserverdisconnected", () => onDisconnected("Se perdió la conexión Bluetooth"));
+    setStatus("Conectando a " + this.name + "…");
+    const gatt = await dev.gatt.connect();
+    const svc = await gatt.getPrimaryService(NUS);
+    this.rx = await svc.getCharacteristic(NUS_RX);
+    const tx = await svc.getCharacteristic(NUS_TX);
+    const dec = new TextDecoder(), lb = new LineBuffer(onLine);
+    tx.addEventListener("characteristicvaluechanged", e => lb.push(dec.decode(e.target.value)));
+    await tx.startNotifications();
+    this.label = "Conectado por Bluetooth (" + this.name + ")";
+  }
+  async send(cmd) {
+    const data = new TextEncoder().encode(cmd + "\n");
+    for (let i = 0; i < data.length; i += 20) {
+      const part = data.slice(i, i + 20);
+      if (this.rx.writeValueWithoutResponse) await this.rx.writeValueWithoutResponse(part);
+      else await this.rx.writeValue(part);
+    }
+  }
+  close() { this.closing = true; try { this.dev.gatt.disconnect(); } catch (_) {} }
+}
+
+class UsbLink {
+  async open() {
+    this.port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x303a }] });
+    await this.port.open({ baudRate: 115200 });
+    // DTR activo para que el firmware vea la consola abierta; RTS apagado para no reiniciar el ESP32.
+    try { await this.port.setSignals({ dataTerminalReady: true, requestToSend: false }); } catch (_) {}
+    this.writer = this.port.writable.getWriter();
+    this.label = "Conectado por cable USB";
+    this.readLoop();
+  }
+  async readLoop() {
+    const dec = new TextDecoder(), lb = new LineBuffer(onLine);
+    try {
+      while (this.port.readable && !this.closing) {
+        this.reader = this.port.readable.getReader();
+        try {
+          for (;;) {
+            const { value, done } = await this.reader.read();
+            if (done) break;
+            lb.push(dec.decode(value, { stream: true }));
+          }
+        } finally { this.reader.releaseLock(); }
+      }
+    } catch (e) { /* cable desconectado */ }
+    if (!this.closing) onDisconnected("Se desconectó el cable USB");
+  }
+  async send(cmd) { await this.writer.write(new TextEncoder().encode(cmd + "\n")); }
+  async close() {
+    this.closing = true;
+    try { await this.reader?.cancel(); } catch (_) {}
+    try { this.writer.releaseLock(); } catch (_) {}
+    try { await this.port.close(); } catch (_) {}
+  }
+}
+
+class DemoLink {
+  async open() {
+    this.label = "Modo demo (datos simulados)";
+    this.mode = "DCV"; this.hold = 0; this.rel = 0; this.t = 0; this.reset();
+    this.timer = setInterval(() => this.tick(), 100);
+    setTimeout(() => onLine(JSON.stringify({ t: "info", name: "Multimetro-DEMO", fw: "demo", ssid: "Multimetro-DEMO",
+      pass: "12345678", ip: "192.168.4.1", port: 3333, ads: 1 })), 200);
+  }
+  reset() { this.mn = null; this.mx = null; this.sum = 0; this.n = 0; }
+  tick() {
+    const t = this.t++, r = Math.random() - .5;
+    const base = { DCV: [12.07 + .35 * Math.sin(t / 14) + .01 * r, "V"], DCA: [0.0423 + .002 * Math.sin(t / 9), "A"],
+      OHM: [4688 + 6 * Math.sin(t / 5), "ohm"], CONT: [(t % 60) < 30 ? 0.8 + r * .1 : null, "ohm"],
+      DIODE: [0.62 + .002 * r, "V"], CAP: [1.02e-7 * (1 + .002 * r), "F"], FREQ: [1000.2 + r, "Hz"] }[this.mode];
+    if (this.hold) return this.emit(this.last);
+    let v = base[0];
+    const ol = v === null ? 1 : 0;
+    if (!ol) { this.mn = Math.min(this.mn ?? v, v); this.mx = Math.max(this.mx ?? v, v); this.sum += v; this.n++; }
+    this.last = { t: "m", m: this.mode, u: base[1], v: ol ? null : v, ol, h: this.hold, rel: this.rel, r: -1,
+      mn: this.mn, mx: this.mx, av: this.n ? this.sum / this.n : null };
+    this.emit(this.last);
+  }
+  emit(o) { o.h = this.hold; o.rel = this.rel; onLine(JSON.stringify(o)); }
+  async send(cmd) {
+    const [c, a] = cmd.split(" ");
+    if (c === "MODE") { this.mode = a; this.reset(); }
+    else if (c === "HOLD") this.hold ^= 1;
+    else if (c === "REL") this.rel ^= 1;
+    else if (c === "RESET") this.reset();
+    else if (c === "CAL" || c === "CALRESET" || c === "CALGET")
+      onLine(JSON.stringify({ t: "cal", kv: 1, ki: 1, r: [1000, 10000, 100000, 1000000], kc: [1, 1] }));
+  }
+  close() { clearInterval(this.timer); }
+}
+
+async function connect(kind) {
+  if (S.link) await disconnect();
+  if (kind === "ble" && !navigator.bluetooth) return toast("Este navegador no tiene Bluetooth web. Usa Chrome o Edge.");
+  if (kind === "usb" && !navigator.serial) return toast("Este navegador no tiene puerto serie web. Usa Chrome o Edge.");
+  const link = kind === "ble" ? new BleLink() : kind === "usb" ? new UsbLink() : new DemoLink();
+  try {
+    await link.open();
+  } catch (e) {
+    setStatus("Desconectado");
+    if (e && e.name === "NotFoundError") return; // el usuario cerró la ventana de selección
+    return toast("No se pudo conectar: " + (e && e.message || e));
+  }
+  S.link = link;
+  setConnected(true, link.label);
+  await sendCmd("INFO");
+  if (!$("devBeep").checked) sendCmd("BEEP 0");
+}
+
+async function disconnect() {
+  const l = S.link; S.link = null;
+  if (l) await l.close();
+  setConnected(false, "Desconectado");
+}
+
+function onDisconnected(msg) {
+  if (!S.link || S.link.closing) return;
+  S.link = null;
+  setConnected(false, "Desconectado");
+  toast(msg);
+}
+
+async function sendCmd(cmd) {
+  if (!S.link) { toast("Primero conecta el multímetro"); return; }
+  try { await S.link.send(cmd); } catch (e) { toast("Error al enviar: " + e.message); }
+}
+
+function setStatus(t) { $("status").textContent = t; }
+function setConnected(on, text) {
+  setStatus(text);
+  $("btnOff").hidden = !on;
+  ["btnBle", "btnUsb", "btnDemo"].forEach(id => $(id).hidden = on);
+  if (!on) { $("value").textContent = "----"; $("unit").textContent = ""; }
+}
+
+// ---------------------------------------------------------------- mensajes del equipo
+function onLine(line) {
+  let j; try { j = JSON.parse(line); } catch (_) { return; }
+  if (j.t === "m") onMeasurement(j);
+  else if (j.t === "info") showInfo(j);
+  else if (j.t === "cal") showCal(j);
+  else if (j.t === "msg") toast(j.s);
+}
+
+function onMeasurement(j) {
+  const code = j.m, u = j.u;
+  if (code !== S.mode) {
+    S.mode = code; S.unit = u; graph.clear();
+    document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("sel", b.dataset.code === code));
+  }
+  const m = MODES.find(x => x.code === code);
+  $("modeLabel").textContent = m ? m.label : code;
+  const ol = j.ol === 1, hold = j.h === 1, rel = j.rel === 1;
+  const v = j.v === null || j.v === undefined ? null : Number(j.v);
+  $("btnHold").classList.toggle("on", hold);
+  $("btnRel").classList.toggle("on", rel);
+  $("flags").textContent = [S.rec && "● REC", hold && "HOLD", rel && "REL"].filter(Boolean).join("  ");
+
+  if (ol) { $("value").textContent = (code === "CONT" || code === "DIODE") ? "ABIERTO" : "OL"; $("unit").textContent = ""; }
+  else if (v === null) { $("value").textContent = code === "CAP" ? "midiendo…" : "----"; $("unit").textContent = ""; }
+  else { const [n, pu] = si(v, u); $("value").textContent = n; $("unit").textContent = pu; graph.add(v); }
+
+  const parts = [];
+  if (j.mn !== undefined && j.mn !== null) {
+    parts.push("MIN " + siText(j.mn, u), "MAX " + siText(j.mx, u), "PROM " + siText(j.av, u));
+  }
+  if (code === "DIODE" && j.x !== undefined) parts.push("If " + siText(j.x, "A"));
+  $("stats").textContent = parts.join("    ");
+
+  if (code === "CONT" && $("pcBeep").checked && !ol && v !== null && v < 30) beep();
+
+  if (S.rec && !hold) {
+    S.rows.push([stamp(), code, v ?? "", unitSym(u), ol ? 1 : 0].join(","));
+    $("recInfo").textContent = S.rows.length + " muestras";
+  }
+}
+
+function showInfo(i) {
+  S.info = i;
+  $("infoBox").textContent =
+    "Nombre: " + i.name + "\nFirmware: " + i.fw + "\nRed WiFi: " + i.ssid + "  (clave " + i.pass + ")\n" +
+    "IP: " + i.ip + "  Puerto: " + i.port + "\nADS1115: " + (i.ads === 1 ? "detectado" : "NO detectado (revisa el cableado)");
+}
+
+function showCal(c) {
+  let s = "kV = " + c.kv + "   kI = " + c.ki;
+  if (c.r) s += "\nRef Ω: " + c.r.map(x => siText(x, "ohm")).join(", ");
+  if (c.kc) s += "\nkC: " + c.kc[0] + " (rango 1M), " + c.kc[1] + " (rango 1k)";
+  $("calInfo").textContent = s;
+}
+
+// ---------------------------------------------------------------- pitido
+let audio;
+function beep() {
+  const now = performance.now();
+  if (now - S.lastBeep < 150) return;
+  S.lastBeep = now;
+  try {
+    audio = audio || new AudioContext();
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = 2400; g.gain.value = .08;
+    o.connect(g).connect(audio.destination);
+    o.start(); o.stop(audio.currentTime + .13);
+  } catch (_) {}
+}
+
+// ---------------------------------------------------------------- gráfica
+const graph = {
+  max: 600, data: [],
+  add(v) { this.data.push(v); if (this.data.length > this.max) this.data.shift(); this.dirty = true; },
+  clear() { this.data = []; this.dirty = true; },
+  draw() {
+    const c = $("graph"), dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth, h = c.clientHeight;
+    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+      c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); this.dirty = true;
+    }
+    if (!this.dirty) return;
+    this.dirty = false;
+    const g = c.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    g.strokeStyle = "#2E3A46"; g.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = Math.round(h * i / 4) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+    g.fillStyle = "#C9D1D9"; g.font = "13px system-ui, sans-serif";
+    if (this.data.length < 2) { g.fillText("Sin datos", 10, h / 2 - 6); return; }
+    let lo = Math.min(...this.data), hi = Math.max(...this.data);
+    if (hi - lo < 1e-12) { const d = Math.abs(hi) * .01 || 1e-9; lo -= d; hi += d; }
+    const pad = (hi - lo) * .08, a = lo - pad, b = hi + pad;
+    g.strokeStyle = "#7CFC9A"; g.lineWidth = 2; g.beginPath();
+    this.data.forEach((v, i) => {
+      const x = w * i / (this.max - 1), y = h - (v - a) / (b - a) * h;
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    });
+    g.stroke();
+    g.fillStyle = "#C9D1D9";
+    g.fillText(siText(hi, S.unit), 8, 18);
+    g.fillText(siText(lo, S.unit), 8, h - 8);
+  },
+};
+(function loop() { graph.draw(); requestAnimationFrame(loop); })();
+
+// ---------------------------------------------------------------- registro CSV
+const pad2 = n => String(n).padStart(2, "0");
+function stamp(d = new Date()) {
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " " +
+    pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds()) + "." + String(d.getMilliseconds()).padStart(3, "0");
+}
+function toggleRec() {
+  S.rec = !S.rec;
+  if (S.rec) { S.rows = []; $("recInfo").textContent = "0 muestras"; }
+  $("btnRec").textContent = S.rec ? "Detener" : "Grabar";
+  $("btnRec").classList.toggle("recon", S.rec);
+}
+function saveCsv() {
+  if (!S.rows.length) return toast("No hay muestras grabadas");
+  const csv = "fecha_hora,modo,valor,unidad,fuera_de_rango\n" + S.rows.join("\n") + "\n";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const d = new Date();
+  a.download = "multimetro_" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "_" +
+    pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds()) + ".csv";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast("CSV guardado (" + S.rows.length + " muestras)");
+}
+
+// ---------------------------------------------------------------- botones
+function selectMode(code) {
+  if (code !== "DCA" || S.mode === "DCA") return sendCmd("MODE " + code);
+  if (!S.link) return toast("Primero conecta el multímetro");
+  $("dlgDca").showModal();
+}
+
+MODES.forEach((m, i) => {
+  const b = document.createElement("button");
+  b.className = "tile"; b.dataset.code = m.code; b.title = m.label + " (tecla " + (i + 1) + ")";
+  b.innerHTML = "<b></b><small></small>";
+  b.querySelector("b").textContent = m.sym; b.querySelector("small").textContent = m.cap;
+  b.onclick = () => selectMode(m.code);
+  $("modes").appendChild(b);
+});
+
+$("btnBle").onclick = () => connect("ble");
+$("btnUsb").onclick = () => connect("usb");
+$("btnDemo").onclick = () => connect("demo");
+$("btnOff").onclick = disconnect;
+$("btnHold").onclick = () => sendCmd("HOLD");
+$("btnRel").onclick = () => sendCmd("REL");
+$("btnReset").onclick = () => { sendCmd("RESET"); graph.clear(); };
+$("btnRec").onclick = toggleRec;
+$("btnCsv").onclick = saveCsv;
+$("btnCal").onclick = () => {
+  const v = parseVal($("calVal").value);
+  if (v === null || v <= 0) return toast("Valor no válido");
+  sendCmd("CAL " + v);
+  setTimeout(() => S.link && sendCmd("CALGET"), 600);
+};
+$("calVal").addEventListener("keydown", e => { if (e.key === "Enter") $("btnCal").click(); });
+$("btnCalGet").onclick = () => sendCmd("CALGET");
+$("btnCalReset").onclick = () => { if (confirm("¿Borrar toda la calibración del multímetro?")) sendCmd("CALRESET"); };
+$("devBeep").onchange = e => sendCmd("BEEP " + (e.target.checked ? 1 : 0));
+$("dcaYes").onclick = () => { $("dlgDca").close(); sendCmd("MODE DCA"); };
+$("dcaNo").onclick = () => $("dlgDca").close();
+
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= 7) selectMode(MODES[n - 1].code);
+  else if (e.key === "h" || e.key === "H") sendCmd("HOLD");
+  else if (e.key === "r" || e.key === "R") sendCmd("REL");
+});
+
+if (!navigator.bluetooth && !navigator.serial) {
+  setStatus("Abre esta página en Google Chrome o Microsoft Edge");
+}
+</script>
+</body>
+</html>

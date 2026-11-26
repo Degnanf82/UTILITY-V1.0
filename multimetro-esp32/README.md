@@ -36,6 +36,8 @@ multimetro-esp32/
 ├── binarios/
 │   ├── Multimetro-v1.6.apk                      ← instalar en el teléfono
 │   └── multimetro-firmware-v1.3.3-completo.bin    ← firmware completo (dirección 0x0)
+├── pc/
+│   └── Multimetro-PC.html                       ← versión de PC (Chrome o Edge)
 ├── codigo-esp32/    firmware (PlatformIO / Arduino)
 └── android/         código de la app (Kotlin, sin librerías externas)
 ```
@@ -122,6 +124,19 @@ pio device monitor       # lecturas en JSON (115200)
 Copia `binarios/Multimetro-v1.6.apk` al teléfono e instálala (Android 7 o superior). Tendrás que permitir
 la instalación de *orígenes desconocidos*. Si la APK viene de otra máquina (por ejemplo, de GitHub Actions),
 desinstala antes la anterior, porque cambia la firma de depuración.
+
+## 2b. Versión de PC
+
+Abre `pc/Multimetro-PC.html` con **Google Chrome** o **Microsoft Edge** (Windows, Linux o Mac). No se instala nada.
+- **Bluetooth:** botón **Bluetooth** → elige `Multimetro-XXXX` en la ventana del navegador. La PC necesita Bluetooth 4.0 o superior.
+- **Cable USB:** conecta el ESP32-C3 por USB-C → botón **Cable USB** → elige el puerto (USB JTAG/serial).
+- **Demo:** muestra datos simulados para probar la pantalla sin el equipo.
+
+Tiene las mismas funciones que la app: las 7 funciones, HOLD, REL, gráfica, grabación a CSV, calibración e información
+del equipo. Teclas: `1`–`7` cambian la función, `H` = HOLD, `R` = REL. El navegador no permite conexiones WiFi (TCP)
+directas, por eso la PC usa Bluetooth o cable.
+
+![Versión de PC](docs/pc-voltaje.png)
 
 ## 3. Conectar
 
